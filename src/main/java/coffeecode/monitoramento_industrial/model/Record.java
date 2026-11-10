@@ -24,10 +24,14 @@ public class Record implements Serializable {
     @Column(nullable = false)
     private boolean isMetal;
 
-    public Record(long id, LocalDateTime dateTime, boolean isMetal) {
+    @Column(nullable = false)
+    private double distance;
+
+    public Record(long id, LocalDateTime dateTime, boolean isMetal, double distance) {
         this.id = id;
         this.dateTime = dateTime;
         this.isMetal = isMetal;
+        this.distance = distance;
     }
 
     public Record() {
@@ -40,6 +44,7 @@ public class Record implements Serializable {
                 "id=" + id +
                 ", dateTime=" + dateTime +
                 ", isMetal=" + isMetal +
+                ", distance=" + distance +
                 '}';
     }
 }
