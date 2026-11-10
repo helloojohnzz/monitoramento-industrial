@@ -12,6 +12,8 @@ function Menu() {
             <Nav.Link as={NavLink} to="/" end>Dashboard</Nav.Link>
             <Nav.Link as={NavLink} to="/historico">Histórico</Nav.Link>
             <Nav.Link as={NavLink} to="/alertas">Alertas</Nav.Link>
+            {/* A RA é uma página separada (MindAR + A-Frame) */}
+            <Nav.Link href="./ra/">Realidade Aumentada</Nav.Link>
           </Nav>
         </Navbar.Collapse>
       </Container>

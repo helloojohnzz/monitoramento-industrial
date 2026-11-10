@@ -10,6 +10,14 @@ function StatusConexao({ loading, erro, temDados }) {
     )
   }
 
+  if (erro === 'demo') {
+    return (
+      <Alert variant="warning">
+        Modo demonstração: API não encontrada, exibindo dados de exemplo.
+      </Alert>
+    )
+  }
+
   if (erro) {
     return <Alert variant="danger">{erro}. Verifique se o servidor está rodando.</Alert>
   }

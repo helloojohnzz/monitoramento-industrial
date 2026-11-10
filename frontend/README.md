@@ -27,3 +27,16 @@ npm run dev      # em outro terminal: abre o dashboard
 O front espera `GET /records` retornando a lista de `Record` (`id`, `dateTime`, `metal` ou `isMetal`, `distance`). O back-end precisa liberar CORS para o endereço do front.
 
 O nível do reservatório é calculado a partir de `distance`: o sensor fica no topo de um reservatório de 30 cm, então quanto menor a distância, mais cheio. Essa altura e os limites de alerta ficam em `src/config.js`.
+
+## GitHub Pages
+
+O site publicado fica na branch `gh-pages`, com o dashboard na raiz e a RA em `/ra/`. Sem a API, ele abre em **modo demonstração**, com os dados de `db.json`.
+
+Para atualizar o site depois de mudar o código:
+
+```bash
+cd frontend
+npm run build
+```
+
+Em seguida, copie o conteúdo de `dist/` (e a pasta `realidade-aumentada/` para `ra/`) para a branch `gh-pages`.
