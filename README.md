@@ -3,5 +3,5 @@ Ciência de Dados:
 - Para contas: statistics.
 
 Back-end
-java.io.Serializable 
-java.time.LocalDateTime
+- java.io.Serializable 
+- java.time.LocalDateTime
