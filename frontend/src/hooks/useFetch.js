@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 // Custom Hook baseado no useFetch visto em aula.
 // Diferença: recebe um "intervalo" para buscar os dados de novo
 // de tempos em tempos (monitoramento em tempo quase real).
-export const useFetch = (url, intervalo) => {
+// Se a API falhar e houver "dadosReserva", usa esses dados (modo demonstração)
+export const useFetch = (url, intervalo, dadosReserva) => {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState(null)
@@ -16,7 +17,12 @@ export const useFetch = (url, intervalo) => {
         setData(json)
         setErro(null)
       } catch (e) {
-        setErro('Não foi possível conectar à API')
+        if (dadosReserva) {
+          setData(dadosReserva)
+          setErro('demo')
+        } else {
+          setErro('Não foi possível conectar à API')
+        }
       }
       setLoading(false)
     }
@@ -30,7 +36,7 @@ export const useFetch = (url, intervalo) => {
       const timer = setInterval(fetchData, intervalo)
       return () => clearInterval(timer)
     }
-  }, [url, intervalo])
+  }, [url, intervalo, dadosReserva])
 
   return { data, setData, loading, erro }
 }

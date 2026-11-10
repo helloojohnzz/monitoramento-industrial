@@ -7,10 +7,11 @@ import Alertas from './pages/Alertas'
 import NaoEncontrada from './pages/NaoEncontrada'
 import { useFetch } from './hooks/useFetch'
 import { URL_LEITURAS, INTERVALO_ATUALIZACAO } from './config'
+import dadosDemo from '../db.json'
 
 function App() {
   // As leituras são buscadas uma vez aqui e passadas para as páginas por props
-  const { data: leituras, loading, erro } = useFetch(URL_LEITURAS, INTERVALO_ATUALIZACAO)
+  const { data: leituras, loading, erro } = useFetch(URL_LEITURAS, INTERVALO_ATUALIZACAO, dadosDemo.records)
 
   const dados = { leituras: leituras || [], loading, erro }
 
