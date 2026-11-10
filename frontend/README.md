@@ -30,7 +30,7 @@ O nível do reservatório é calculado a partir de `distance`: o sensor fica no 
 
 ## GitHub Pages
 
-O site publicado fica na branch `gh-pages`, com o dashboard na raiz e a RA em `/ra/`. Sem a API, ele abre em **modo demonstração**, com os dados de `db.json`.
+O site publicado fica na pasta `docs/` da master, com o dashboard na raiz e a RA em `docs/ra/`. Sem a API, ele abre em **modo demonstração**, com os dados de `db.json`.
 
 Para atualizar o site depois de mudar o código:
 
@@ -39,4 +39,4 @@ cd frontend
 npm run build
 ```
 
-Em seguida, copie o conteúdo de `dist/` (e a pasta `realidade-aumentada/` para `ra/`) para a branch `gh-pages`.
+Em seguida, copie o conteúdo de `dist/` para `docs/` e a pasta `realidade-aumentada/` para `docs/ra/`.
