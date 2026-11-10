@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Table
 @Entity
-public class Register implements Serializable {
+public class Record implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -20,13 +20,13 @@ public class Register implements Serializable {
     @Column(nullable = false)
     private boolean isMetal;
 
-    public Register(long id, LocalDateTime dateTime, boolean isMetal) {
+    public Record(long id, LocalDateTime dateTime, boolean isMetal) {
         this.id = id;
         this.dateTime = dateTime;
         this.isMetal = isMetal;
     }
 
-    public Register() {
+    public Record() {
 
     }
 
