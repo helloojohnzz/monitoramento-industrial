@@ -8,8 +8,13 @@
   --mt-vermelho-escuro: #a1031f;
   --mt-preto: #0b0b0b;
   --mt-cinza: #5f5f5f;
-  --mt-cinza-claro: #f2f2f2;
+  --mt-cinza-claro: #ece5d8;
   --mt-branco: #ffffff;
+
+  /* Fundo off-white bege (no lugar do branco puro) */
+  --mt-bege: #f5f0e6;
+  --mt-bege-claro: #fbf8f2;
+  --mt-bege-borda: #e0d7c6;
 
   /* Cores do Bootstrap usadas nos componentes (variant="...") */
   --bs-primary: var(--mt-vermelho);
@@ -30,7 +35,11 @@
   /* Texto e fundo da página */
   --bs-body-color: var(--mt-preto);
   --bs-body-color-rgb: 11, 11, 11;
-  --bs-body-bg: var(--mt-branco);
+  --bs-body-bg: var(--mt-bege);
+  --bs-body-bg-rgb: 245, 240, 230;
+  --bs-secondary-bg: #e8e0d1;  /* trilho das barras de progresso */
+  --bs-tertiary-bg: #efe8dc;
+  --bs-border-color: var(--mt-bege-borda);
   --bs-emphasis-color: var(--mt-preto);
 
   /* Links pretos (sem letra vermelha) */
@@ -79,7 +88,8 @@
 
 /* ---------- Cards ---------- */
 .card {
-  border-color: #dcdcdc;
+  --bs-card-bg: var(--mt-bege-claro);
+  border-color: var(--mt-bege-borda);
 }
 
 /* Cards dos indicadores: faixa colorida no topo e número preto */
@@ -101,7 +111,7 @@
 .alert-info {
   --bs-alert-bg: var(--mt-cinza-claro);
   --bs-alert-color: var(--mt-preto);
-  --bs-alert-border-color: #dcdcdc;
+  --bs-alert-border-color: var(--mt-bege-borda);
   border-left: 4px solid var(--mt-vermelho);
 }
 
@@ -113,6 +123,12 @@
 }
 
 /* ---------- Tabelas ---------- */
+.table {
+  --bs-table-bg: var(--mt-bege-claro);
+  --bs-table-striped-bg: #f0eadf;
+  --bs-table-hover-bg: #e8e0d1;
+}
+
 .table > thead th {
   background-color: var(--mt-preto);
   color: var(--mt-branco);
