@@ -1,0 +1,14 @@
+{
+  "name": "ponte-iolink",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Lê os sensores do IO-Link master e envia as leituras para a API Spring Boot",
+  "type": "module",
+  "scripts": {
+    "start": "node ponte.js",
+    "teste": "node ponte.js --teste"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
