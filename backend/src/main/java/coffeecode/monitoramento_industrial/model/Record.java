@@ -27,9 +27,8 @@ public class Record implements Serializable {
     @Column(nullable = false)
     private double distance;
 
-    public Record(long id, LocalDateTime dateTime, boolean isMetal, double distance) {
-        this.id = id;
-        this.dateTime = dateTime;
+    public Record(boolean isMetal, double distance) {
+        this.dateTime = LocalDateTime.now();
         this.isMetal = isMetal;
         this.distance = distance;
     }
