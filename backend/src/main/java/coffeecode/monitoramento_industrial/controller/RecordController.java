@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Record")
+@RequestMapping("/records")
+// Libera o front (Vite em localhost:5173, GitHub Pages etc.) para chamar a API
+@CrossOrigin(origins = "*")
 public class RecordController {
     @Autowired
     private RecordService recordService;

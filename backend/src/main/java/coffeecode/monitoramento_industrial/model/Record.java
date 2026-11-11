@@ -24,21 +24,11 @@ public class Record implements Serializable {
     @Column(nullable = false)
     private boolean isMetal;
 
-<<<<<<< HEAD
-    public Record(long id, LocalDateTime dateTime, boolean isMetal) {
-=======
     @Column(nullable = false)
     private double distance;
 
-<<<<<<< HEAD:backend/src/main/java/coffeecode/monitoramento_industrial/model/Record.java
     public Record(boolean isMetal, double distance) {
         this.dateTime = LocalDateTime.now();
-=======
-    public Record(long id, LocalDateTime dateTime, boolean isMetal, double distance) {
->>>>>>> eba4a783525aa8f370f1af9569a7cf0f8e5ab3fa
-        this.id = id;
-        this.dateTime = dateTime;
->>>>>>> f3a952b37989edf3abf8007ad830d3639cc1b11f:src/main/java/coffeecode/monitoramento_industrial/model/Record.java
         this.isMetal = isMetal;
         this.distance = distance;
     }
