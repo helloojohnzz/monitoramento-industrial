@@ -23,9 +23,11 @@ function calcularNivel(distancia) {
 }
 
 function corDoNivel(nivel) {
-    if (nivel >= NIVEL_CRITICO) return '#DC3545'; // vermelho
-    if (nivel >= NIVEL_ATENCAO) return '#FFC107'; // amarelo
-    return '#198754';                             // verde
+    // Paleta MetalTech: cinza (normal), branco (atenção) e vermelho (crítico).
+    // Essa cor vai só no cilindro do reservatório; os textos ficam brancos.
+    if (nivel >= NIVEL_CRITICO) return '#D90429'; // vermelho
+    if (nivel >= NIVEL_ATENCAO) return '#FFFFFF'; // branco
+    return '#8C8C8C';                             // cinza
 }
 
 // ===== Busca dos dados =====
@@ -56,7 +58,6 @@ function atualizarCena(leituras) {
 
     const txtNivel = document.getElementById('txt-nivel');
     txtNivel.setAttribute('value', 'Reservatorio: ' + nivel + '%');
-    txtNivel.setAttribute('color', cor);
 
     let alerta = '';
     if (nivel >= NIVEL_CRITICO) alerta = 'ALERTA: reservatorio quase cheio!';
@@ -81,7 +82,7 @@ async function atualizar() {
 
 // Mostra se o marcador está sendo reconhecido
 const alvo = document.getElementById('alvo');
-alvo.addEventListener('targetFound', () => status.style.background = 'rgba(25, 135, 84, 0.85)');
+alvo.addEventListener('targetFound', () => status.style.background = 'rgba(217, 4, 41, 0.9)');
 alvo.addEventListener('targetLost', () => status.style.background = 'rgba(0, 0, 0, 0.7)');
 
 atualizar();

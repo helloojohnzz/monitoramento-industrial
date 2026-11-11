@@ -44,8 +44,8 @@ function Historico({ leituras, loading, erro }) {
               <td>{formatarData(l.dateTime)}</td>
               <td>
                 {ehMetal(l)
-                  ? <Badge bg="secondary">Metálica</Badge>
-                  : <Badge bg="info">Não metálica</Badge>}
+                  ? <Badge bg="dark">Metálica</Badge>
+                  : <Badge bg="primary">Não metálica</Badge>}
               </td>
               <td>{l.distance}</td>
               <td>{calcularNivel(l.distance)}</td>

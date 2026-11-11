@@ -43,27 +43,29 @@
         <a-entity id="alvo" mindar-image-target="targetIndex: 0">
 
             <!-- Painel com as contagens -->
-            <a-plane position="-0.18 0 0.01" width="0.6" height="0.62" color="#212529" opacity="0.95"></a-plane>
+            <a-plane position="-0.18 0 0.01" width="0.6" height="0.62" color="#0B0B0B" opacity="0.95"></a-plane>
+            <!-- Faixa vermelha no topo do painel (identidade visual MetalTech) -->
+            <a-plane position="-0.18 0.295 0.015" width="0.6" height="0.03" color="#D90429"></a-plane>
 
             <a-text value="ESTEIRA DE TRIAGEM" position="-0.45 0.24 0.02" width="1.1" color="#FFFFFF"></a-text>
 
-            <a-text value="Metalicas:" position="-0.45 0.12 0.02" width="1" color="#ADB5BD"></a-text>
+            <a-text value="Metalicas:" position="-0.45 0.12 0.02" width="1" color="#BFBFBF"></a-text>
             <a-text id="txt-metalicas" value="--" position="0.0 0.12 0.02" width="1.4" color="#FFFFFF"></a-text>
 
-            <a-text value="Nao metalicas:" position="-0.45 0.02 0.02" width="1" color="#0DCAF0"></a-text>
+            <a-text value="Nao metalicas:" position="-0.45 0.02 0.02" width="1" color="#BFBFBF"></a-text>
             <a-text id="txt-nao-metalicas" value="--" position="0.0 0.02 0.02" width="1.4" color="#FFFFFF"></a-text>
 
-            <a-text value="Total:" position="-0.45 -0.08 0.02" width="1" color="#ADB5BD"></a-text>
+            <a-text value="Total:" position="-0.45 -0.08 0.02" width="1" color="#BFBFBF"></a-text>
             <a-text id="txt-total" value="--" position="0.0 -0.08 0.02" width="1.4" color="#FFFFFF"></a-text>
 
             <a-text id="txt-nivel" value="Reservatorio: --" position="-0.45 -0.18 0.02" width="1" color="#FFFFFF"></a-text>
-            <a-text id="txt-alerta" value="" position="-0.45 -0.26 0.02" width="0.9" color="#DC3545"></a-text>
+            <a-text id="txt-alerta" value="" position="-0.45 -0.26 0.02" width="0.9" color="#FFFFFF"></a-text>
 
             <!-- Reservatório: tubo transparente + "conteúdo" que sobe conforme o nível -->
             <a-cylinder position="0.32 0 0.15" radius="0.08" height="0.5"
                         color="#FFFFFF" opacity="0.25"></a-cylinder>
             <a-cylinder id="conteudo" position="0.32 -0.25 0.15" radius="0.075" height="0.01"
-                        color="#198754"></a-cylinder>
+                        color="#8C8C8C"></a-cylinder>
         </a-entity>
 
     </a-scene>
