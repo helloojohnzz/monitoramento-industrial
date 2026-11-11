@@ -1,0 +1,22 @@
+{
+  "masterUrl": "http://10.110.12.41",
+  "apiUrl": "http://localhost:8080/records",
+  "intervaloLeituraMs": 200,
+  "intervaloMinimoEntrePecasMs": 1000,
+
+  "sensores": {
+    "nivel": {
+      "porta": 1,
+      "descartarBits": 2,
+      "fatorParaCm": 0.1
+    },
+    "presenca": {
+      "porta": 2,
+      "ativoQuando": { "bit": 0 }
+    },
+    "metal": {
+      "porta": 3,
+      "ativoQuando": { "valorAbaixoDe": 32000 }
+    }
+  }
+}
