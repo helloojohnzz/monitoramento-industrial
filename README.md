@@ -92,6 +92,6 @@ Se a API não responder, o app entra em modo demonstração com dados de exemplo
 ## Equipe
 
 - Samuel Campos
-- João
+- João Paulo Oliveira
 - Eduardo Coppi
 - Beatriz Cardoso Rocha
