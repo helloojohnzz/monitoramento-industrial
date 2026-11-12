@@ -23,9 +23,9 @@ function calcularNivel(distancia) {
 }
 
 function corDoNivel(nivel) {
-    // Paleta MetalTech: cinza (normal), branco (atenção) e vermelho (crítico).
+    // Paleta MetalTech: cinza (normal), branco (atenção) e roxo (crítico).
     // Essa cor vai só no cilindro do reservatório; os textos ficam brancos.
-    if (nivel >= NIVEL_CRITICO) return '#D90429'; // vermelho
+    if (nivel >= NIVEL_CRITICO) return '#7B2CBF'; // roxo
     if (nivel >= NIVEL_ATENCAO) return '#FFFFFF'; // branco
     return '#8C8C8C';                             // cinza
 }
@@ -82,7 +82,7 @@ async function atualizar() {
 
 // Mostra se o marcador está sendo reconhecido
 const alvo = document.getElementById('alvo');
-alvo.addEventListener('targetFound', () => status.style.background = 'rgba(217, 4, 41, 0.9)');
+alvo.addEventListener('targetFound', () => status.style.background = 'rgba(41, 82, 204, 0.9)');
 alvo.addEventListener('targetLost', () => status.style.background = 'rgba(0, 0, 0, 0.7)');
 
 atualizar();
