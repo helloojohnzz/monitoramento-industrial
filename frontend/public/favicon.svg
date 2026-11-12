@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Favicon MetalTech: fundo preto, faixa azul e "M" branco -->
+  <rect width="64" height="64" rx="12" fill="#0b0b0b"/>
+  <rect x="0" y="52" width="64" height="6" fill="#2952cc"/>
+  <path d="M14 46V16h7l11 15 11-15h7v30h-8V29l-10 13-10-13v17z" fill="#ffffff"/>
+  <rect x="47" y="4" width="10" height="10" fill="#2952cc"/>
+</svg>
