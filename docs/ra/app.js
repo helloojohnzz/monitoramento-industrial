@@ -87,3 +87,42 @@ alvo.addEventListener('targetLost', () => status.style.background = 'rgba(0, 0, 
 
 atualizar();
 setInterval(atualizar, INTERVALO);
+
+// ---------- Zoom: pinça com dois dedos ou botões + / - ----------
+const grupoZoom = document.getElementById('grupo-zoom');
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3;
+let escala = 1;
+
+function aplicarZoom(novaEscala) {
+    escala = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, novaEscala));
+    grupoZoom.setAttribute('scale', `${escala} ${escala} ${escala}`);
+    document.getElementById('zoom-reset').textContent = escala.toFixed(1) + 'x';
+}
+
+document.getElementById('zoom-mais').addEventListener('click', () => aplicarZoom(escala + 0.25));
+document.getElementById('zoom-menos').addEventListener('click', () => aplicarZoom(escala - 0.25));
+document.getElementById('zoom-reset').addEventListener('click', () => aplicarZoom(1));
+
+// Pinça: compara a distância entre os dois dedos com a distância inicial
+let distanciaInicial = null;
+let escalaInicial = 1;
+const distanciaDedos = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+
+document.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        distanciaInicial = distanciaDedos(e.touches);
+        escalaInicial = escala;
+    }
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && distanciaInicial) {
+        e.preventDefault(); // impede o zoom da página inteira
+        aplicarZoom(escalaInicial * distanciaDedos(e.touches) / distanciaInicial);
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) distanciaInicial = null;
+});
