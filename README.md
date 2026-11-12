@@ -94,3 +94,4 @@ Se a API não responder, o app entra em modo demonstração com dados de exemplo
 - Samuel Campos
 - João
 - Eduardo Coppi
+- Beatriz Cardoso Rocha
