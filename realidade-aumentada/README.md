@@ -1,6 +1,6 @@
 # Realidade Aumentada — Esteira em RA (MindAR + A-Frame)
 
-Ao apontar a câmera do celular para o marcador, aparecem as contagens de peças e o nível do reservatório. O nível muda de cor: verde (normal), amarelo (a partir de 70%) e vermelho (a partir de 90%, com alerta).
+Ao apontar a câmera do celular para o marcador, aparecem as contagens de peças e o nível do reservatório. O nível muda de cor: cinza (normal), branco (a partir de 70%) e roxo (a partir de 90%, com alerta).
 
 ## Arquivos
 
