@@ -1,4 +1,4 @@
-import { Card, ProgressBar, Badge } from 'react-bootstrap'
+import { Card, ProgressBar, Badge, Alert } from 'react-bootstrap'
 import { situacaoNivel } from '../utils/calculos'
 
 function NivelReservatorio({ nivel }) {
@@ -19,9 +19,9 @@ function NivelReservatorio({ nivel }) {
         />
         {/* Renderização condicional: aviso só aparece quando o nível está crítico */}
         {situacao.cor === 'danger' && (
-          <p className="text-danger fw-bold mt-2 mb-0">
+          <Alert variant="danger" className="fw-bold mt-2 mb-0 py-2">
             Reservatório quase cheio! Esvazie antes de parar a esteira.
-          </p>
+          </Alert>
         )}
       </Card.Body>
     </Card>

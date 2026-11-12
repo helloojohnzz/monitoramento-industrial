@@ -1,0 +1,135 @@
+/*
+  Tema MetalTech: vermelho, preto e branco.
+  Regra: o vermelho é usado em fundos, bordas e barras, nunca na cor das letras.
+  Este arquivo é importado depois do Bootstrap e sobrescreve as cores dele.
+*/
+:root {
+  --mt-vermelho: #d90429;
+  --mt-vermelho-escuro: #a1031f;
+  --mt-preto: #0b0b0b;
+  --mt-cinza: #5f5f5f;
+  --mt-cinza-claro: #ece5d8;
+  --mt-branco: #ffffff;
+
+  /* Fundo off-white bege (no lugar do branco puro) */
+  --mt-bege: #f5f0e6;
+  --mt-bege-claro: #fbf8f2;
+  --mt-bege-borda: #e0d7c6;
+
+  /* Cores do Bootstrap usadas nos componentes (variant="...") */
+  --bs-primary: var(--mt-vermelho);
+  --bs-primary-rgb: 217, 4, 41;
+  --bs-danger: var(--mt-vermelho);
+  --bs-danger-rgb: 217, 4, 41;
+  --bs-dark: var(--mt-preto);
+  --bs-dark-rgb: 11, 11, 11;
+  --bs-secondary: var(--mt-cinza);
+  --bs-secondary-rgb: 95, 95, 95;
+  --bs-success: var(--mt-cinza);
+  --bs-success-rgb: 95, 95, 95;
+  --bs-warning: var(--mt-preto);
+  --bs-warning-rgb: 11, 11, 11;
+  --bs-info: var(--mt-cinza);
+  --bs-info-rgb: 95, 95, 95;
+
+  /* Texto e fundo da página */
+  --bs-body-color: var(--mt-preto);
+  --bs-body-color-rgb: 11, 11, 11;
+  --bs-body-bg: var(--mt-bege);
+  --bs-body-bg-rgb: 245, 240, 230;
+  --bs-secondary-bg: #e8e0d1;  /* trilho das barras de progresso */
+  --bs-tertiary-bg: #efe8dc;
+  --bs-border-color: var(--mt-bege-borda);
+  --bs-emphasis-color: var(--mt-preto);
+
+  /* Links pretos (sem letra vermelha) */
+  --bs-link-color: var(--mt-preto);
+  --bs-link-color-rgb: 11, 11, 11;
+  --bs-link-hover-color: var(--mt-preto);
+  --bs-link-hover-color-rgb: 11, 11, 11;
+}
+
+/* ---------- Menu ---------- */
+.navbar.bg-dark {
+  border-bottom: 4px solid var(--mt-vermelho);
+}
+
+.navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--mt-branco);
+}
+
+/* Quadradinho vermelho antes do nome (detalhe da marca) */
+.navbar .navbar-brand::before {
+  content: '';
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.5rem;
+  background: var(--mt-vermelho);
+}
+
+.navbar .nav-link {
+  color: rgba(255, 255, 255, 0.75);
+  border-bottom: 3px solid transparent;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  color: var(--mt-branco);
+}
+
+/* Página atual: letra branca com sublinhado vermelho */
+.navbar .nav-link.active {
+  color: var(--mt-branco) !important;
+  border-bottom-color: var(--mt-vermelho);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  --bs-card-bg: var(--mt-bege-claro);
+  border-color: var(--mt-bege-borda);
+}
+
+/* Cards dos indicadores: faixa colorida no topo e número preto */
+.card-indicador {
+  border-top-width: 4px;
+}
+
+/* ---------- Avisos ---------- */
+/* Crítico: fundo vermelho, letra branca */
+.alert-danger {
+  --bs-alert-bg: var(--mt-vermelho);
+  --bs-alert-color: var(--mt-branco);
+  --bs-alert-border-color: var(--mt-vermelho-escuro);
+}
+
+/* Demonstração / normal: fundo cinza-claro, letra preta e detalhe vermelho */
+.alert-warning,
+.alert-success,
+.alert-info {
+  --bs-alert-bg: var(--mt-cinza-claro);
+  --bs-alert-color: var(--mt-preto);
+  --bs-alert-border-color: var(--mt-bege-borda);
+  border-left: 4px solid var(--mt-vermelho);
+}
+
+/* ---------- Formulários ---------- */
+.form-select:focus,
+.form-control:focus {
+  border-color: var(--mt-vermelho);
+  box-shadow: 0 0 0 0.25rem rgba(217, 4, 41, 0.2);
+}
+
+/* ---------- Tabelas ---------- */
+.table {
+  --bs-table-bg: var(--mt-bege-claro);
+  --bs-table-striped-bg: #f0eadf;
+  --bs-table-hover-bg: #e8e0d1;
+}
+
+.table > thead th {
+  background-color: var(--mt-preto);
+  color: var(--mt-branco);
+}

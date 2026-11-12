@@ -12,8 +12,8 @@ export const calcularNivel = (distancia) => {
 // Retorna a situação do reservatório conforme o nível
 export const situacaoNivel = (nivel) => {
   if (nivel >= NIVEL_CRITICO) return { texto: 'Crítico', cor: 'danger' }
-  if (nivel >= NIVEL_ATENCAO) return { texto: 'Atenção', cor: 'warning' }
-  return { texto: 'Normal', cor: 'success' }
+  if (nivel >= NIVEL_ATENCAO) return { texto: 'Atenção', cor: 'dark' }
+  return { texto: 'Normal', cor: 'secondary' }
 }
 
 // Monta o resumo usado no dashboard a partir da lista de leituras

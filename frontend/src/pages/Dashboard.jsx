@@ -42,13 +42,13 @@ function Dashboard({ leituras, loading, erro }) {
 
       <Row className="g-3 mb-3">
         <Col xs={12} sm={4}>
-          <CardIndicador titulo="Total de peças" valor={resumo.total} cor="primary" />
+          <CardIndicador titulo="Total de peças" valor={resumo.total} cor="secondary" />
         </Col>
         <Col xs={6} sm={4}>
-          <CardIndicador titulo="Metálicas" valor={resumo.metalicas} cor="secondary" />
+          <CardIndicador titulo="Metálicas" valor={resumo.metalicas} cor="dark" />
         </Col>
         <Col xs={6} sm={4}>
-          <CardIndicador titulo="Não metálicas" valor={resumo.naoMetalicas} cor="info" />
+          <CardIndicador titulo="Não metálicas" valor={resumo.naoMetalicas} cor="primary" />
         </Col>
       </Row>
 
@@ -60,8 +60,8 @@ function Dashboard({ leituras, loading, erro }) {
           <GraficoBarras
             titulo="Metálico x não metálico"
             itens={[
-              { rotulo: 'Metálicas', valor: resumo.metalicas, cor: 'secondary' },
-              { rotulo: 'Não metálicas', valor: resumo.naoMetalicas, cor: 'info' },
+              { rotulo: 'Metálicas', valor: resumo.metalicas, cor: 'dark' },
+              { rotulo: 'Não metálicas', valor: resumo.naoMetalicas, cor: 'primary' },
             ]}
           />
         </Col>
