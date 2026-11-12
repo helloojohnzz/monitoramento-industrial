@@ -1,61 +1,62 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-from sqlalchemy import create_engine
+import time
+import requests
 
-# ---------------------------------------------------------
-# 1. CONEXÃO COM O MYSQL E LEITURA DOS DADOS
-# ---------------------------------------------------------
-usuario = 'root'
-senha = 'root123456'
-host = 'localhost'
-porta = '3306'
-nome_do_banco = 'db_industrial_monitoring'
+# Mapeamento completo dos 3 endpoints IO-Link
+SENSORES = {
+    "sensor_geral": {
+        "url": "http://10.110.12.41/iolinkmaster/port[1]/iolinkdevice/pdin/getdata",
+        "tipo": "geral"
+    },
+    "sensor_metalico": {
+        "url": "http://10.110.12.41/iolinkmaster/port[2]/iolinkdevice/pdin/getdata",
+        "tipo": "metalica"
+    },
+    "sensor_nao_metalico": {
+        "url": "http://10.110.12.41/iolinkmaster/port[3]/iolinkdevice/pdin/getdata",
+        "tipo": "nao_metalica"
+    }
+}
 
-engine = create_engine(
-    f'mysql+pymysql://{usuario}:{senha}@{host}:{porta}/{nome_do_banco}'
-)
+def monitorar_producao():
+    print("Iniciando monitoramento da linha de produção (3 sensores)... Pressione Ctrl+C para parar.\n")
 
-query = 'SELECT id, date_time, is_metal FROM record'
-# 1. Leitura dos dados
-query = 'SELECT id, date_time, is_metal FROM record'
-df = pd.read_sql(query, con=engine)
+    while True:
+        timestamp_atual = time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        for nome_sensor, config in SENSORES.items():
+            try:
+                resposta = requests.get(config["url"], timeout=3)
+                dados = resposta.json()
 
-# --- CONVERSÃO DOS BYTES PARA BOOLEANO ---
-# O PyMySQL lê o tipo BOOLEAN do MySQL como bytes (b'\x01' e b'\x00').
-# Esta linha converte para True e False de verdade:
-if df['is_metal'].dtype == object or isinstance(df['is_metal'].iloc[0], bytes):
-  df['is_metal'] = df['is_metal'].apply(lambda x: x == b'\x01' or x == 1)
+                if dados.get("code") == 200:
+                    hex_value = dados["data"]["value"]
+                    # Converte de Hexadecimal para Decimal (Centímetros)
+                    distancia_cm = int(hex_value, 16)
+                    
+                    tipo_peca = config["tipo"]
+                    
+                    # Exibindo de forma diferenciada no console
+                    if tipo_peca == "metalica":
+                        print(f"[{timestamp_atual}] [PEÇA METÁLICA] Sensor P2 -> Distância: {distancia_cm} cm (Hex: {hex_value})")
+                    elif tipo_peca == "nao_metalica":
+                        print(f"[{timestamp_atual}] [PEÇA NÃO METÁLICA] Sensor P3 -> Distância: {distancia_cm} cm (Hex: {hex_value})")
+                    else:
+                        print(f"[{timestamp_atual}] [SENSOR GERAL] Sensor P1 -> Distância: {distancia_cm} cm (Hex: {hex_value})")
+                        
+                    # 💡 DICA: É exatamente aqui que você salvaria esses dados no seu banco de dados 
+                    # (inserindo: timestamp, tipo_peca, distancia_cm)
 
-# 2. Tratamento e agrupamento
-df['date_time'] = pd.to_datetime(df['date_time'])
-df['apenas_data'] = df['date_time'].dt.date
+                else:
+                    print(f"[{timestamp_atual}] [{nome_sensor}] Erro de código retornado: {dados.get('code')}")
 
-df_grouped = (
-    df.groupby(['apenas_data', 'is_metal'])['id']
-    .count()
-    .unstack(fill_value=0)
-)
+            except requests.exceptions.RequestException as e:
+                print(f"[{timestamp_atual}] [{nome_sensor}] Erro de conexão com o IO-Link: {e}")
+            except ValueError:
+                print(f"[{timestamp_atual}] [{nome_sensor}] Erro ao converter o valor hex: {hex_value}")
 
-df_grouped = df_grouped.reindex(columns=[False, True], fill_value=0)
-df_grouped.columns = ['Não Metálico', 'Metálico']
+        print("-" * 60)
+        # Pausa de 2 segundos antes da próxima varredura
+        time.sleep(2)
 
-print('--- [DEBUG] DADOS AGRUPADOS CORRIGIDOS ---')
-print(df_grouped)
-print('----------------------------------------\n')
-
-# 3. Geração do Gráfico
-plt.figure(figsize=(10, 6))
-df_grouped.plot(kind='line', marker='o', linewidth=2, figsize=(10, 5))
-
-plt.title(
-    'Quantidade de Produtos Metálicos e Não Metálicos ao Longo do Tempo',
-    fontsize=14,
-)
-plt.xlabel('Data', fontsize=12)
-plt.ylabel('Quantidade', fontsize=12)
-plt.grid(True, linestyle='--', alpha=0.7)
-plt.legend(title='Categoria')
-plt.xticks(rotation=45)
-plt.tight_layout()
-
-plt.show()
+if __name__ == "__main__":
+    monitorar_producao()
