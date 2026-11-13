@@ -1,0 +1,2 @@
+# Variáveis de ambiente com senhas e chaves (nunca enviar para o GitHub)
+.env

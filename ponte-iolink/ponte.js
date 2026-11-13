@@ -17,6 +17,8 @@ const { masterUrl, apiUrl, intervaloLeituraMs, intervaloMinimoEntrePecasMs, sens
 // Variáveis de ambiente têm prioridade (ex.: MASTER_URL=http://10.110.12.41)
 const MASTER_URL = process.env.MASTER_URL || masterUrl
 const API_URL = process.env.API_URL || apiUrl
+// Chave exigida pela API para gravar dados (variável API_KEY, a mesma do back-end)
+const API_KEY = process.env.API_KEY || config.apiKey || ''
 const MODO_TESTE = process.argv.includes('--teste')
 
 // ---------------------------------------------------------------
@@ -84,7 +86,10 @@ async function enviarPendentes() {
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(API_KEY && { 'X-API-Key': API_KEY }),
+        },
         body: JSON.stringify(leitura),
         signal: AbortSignal.timeout(3000),
       })

@@ -25,6 +25,7 @@ Sensores (IO-Link) → ponte-iolink → API REST (Spring Boot) → MySQL
 | `frontend/` | Dashboard web em React + Vite + Bootstrap |
 | `realidade-aumentada/` | Aplicativo de Realidade Aumentada (A-Frame + MindAR) |
 | `docs/` | Versão publicada no GitHub Pages (dashboard e RA) |
+| `nuvem/` | Documento de arquitetura de nuvem, diagrama e guia de publicação |
 
 ## Tecnologias
 
@@ -33,6 +34,7 @@ Sensores (IO-Link) → ponte-iolink → API REST (Spring Boot) → MySQL
 - **Realidade Aumentada:** A-Frame, MindAR
 - **Integração com sensores:** Node.js, IO-Link (ifm)
 - **Ciência de Dados:** Python
+- **Nuvem:** Docker, Docker Compose, PaaS (Render) e MySQL gerenciado (Aiven)
 
 ## Como rodar
 
@@ -51,6 +53,16 @@ A API sobe em `http://localhost:8080`.
 |---|---|---|
 | GET | `/records` | Lista todas as leituras |
 | POST | `/records` | Registra uma nova leitura (peça) |
+
+#### Com Docker
+
+Também dá para subir a API e o MySQL juntos com Docker. Copie `.env.example` para `.env`, troque as senhas e rode na raiz do repositório:
+
+```bash
+docker compose up -d --build
+```
+
+A saúde da API fica em `http://localhost:8080/actuator/health`. Quando `API_KEY` está definida, gravar dados exige o cabeçalho `X-API-Key`. Detalhes e o passo a passo para publicar na nuvem estão em [`nuvem/README.md`](nuvem/README.md).
 
 ### 2. Ponte IO-Link
 

@@ -60,6 +60,17 @@ Também dá para trocar os endereços sem mexer no arquivo:
 MASTER_URL=http://10.110.12.41 API_URL=http://localhost:8080/records npm start
 ```
 
+### API na nuvem
+
+Quando a API estiver publicada na nuvem, ela exige uma chave para gravar dados.
+Passe o endereço da API e a mesma chave configurada no back-end (`API_KEY`):
+
+```bash
+API_URL=https://ENDERECO-DA-API/records API_KEY=sua-chave npm start
+```
+
+Não coloque a chave no `config.json`, porque esse arquivo vai para o GitHub.
+
 ## Calibrando os sensores
 
 As portas e regras do `config.json` são um **palpite inicial**, baseado nas leituras
