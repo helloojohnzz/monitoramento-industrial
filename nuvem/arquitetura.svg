@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b0b0b"/>
+    </marker>
+    <style>
+      .caixa { fill: #fbf8f2; stroke: #0b0b0b; stroke-width: 2; rx: 10; }
+      .titulo { font-size: 17px; font-weight: bold; fill: #0b0b0b; }
+      .texto { font-size: 13px; fill: #333; }
+      .rotulo { font-size: 12px; fill: #0b0b0b; }
+      .linha { stroke: #0b0b0b; stroke-width: 2; fill: none; marker-end: url(#seta); }
+      .tls { font-size: 11px; font-weight: bold; fill: #2952cc; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="560" fill="#f5f0e6"/>
+  <text x="500" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#0b0b0b">Arquitetura de nuvem — MetalTech</text>
+
+  <!-- Laboratório -->
+  <rect x="30" y="70" width="250" height="300" fill="none" stroke="#5f5f5f" stroke-width="2" stroke-dasharray="8 6" rx="14"/>
+  <text x="155" y="96" text-anchor="middle" class="titulo">Laboratório (rede local)</text>
+  <rect x="55" y="115" width="200" height="90" class="caixa"/>
+  <text x="155" y="145" text-anchor="middle" class="titulo">Esteira + sensores</text>
+  <text x="155" y="168" text-anchor="middle" class="texto">IO-Link master (ifm)</text>
+  <text x="155" y="186" text-anchor="middle" class="texto">distância, indutivo, capacitivo</text>
+  <rect x="55" y="255" width="200" height="90" class="caixa"/>
+  <text x="155" y="285" text-anchor="middle" class="titulo">Ponte IO-Link</text>
+  <text x="155" y="308" text-anchor="middle" class="texto">Node.js — lê os sensores</text>
+  <text x="155" y="326" text-anchor="middle" class="texto">e envia cada peça</text>
+  <path d="M155 205 L155 252" class="linha"/>
+  <text x="165" y="234" class="rotulo">HTTP (rede local)</text>
+
+  <!-- Nuvem -->
+  <rect x="340" y="70" width="400" height="430" fill="#ffffff" stroke="#2952cc" stroke-width="3" rx="16"/>
+  <rect x="340" y="70" width="400" height="34" fill="#2952cc" rx="16"/>
+  <rect x="340" y="90" width="400" height="14" fill="#2952cc"/>
+  <text x="540" y="93" text-anchor="middle" font-size="17" font-weight="bold" fill="#ffffff">Nuvem (PaaS)</text>
+
+  <rect x="380" y="130" width="320" height="140" class="caixa"/>
+  <text x="540" y="160" text-anchor="middle" class="titulo">API REST — Spring Boot</text>
+  <text x="540" y="184" text-anchor="middle" class="texto">Container Docker (Render — Web Service)</text>
+  <text x="540" y="204" text-anchor="middle" class="texto">HTTPS automático · health check /actuator/health</text>
+  <text x="540" y="224" text-anchor="middle" class="texto">Escrita só com chave (X-API-Key) · CORS restrito</text>
+  <text x="540" y="244" text-anchor="middle" class="texto">Senhas em variáveis de ambiente</text>
+
+  <rect x="380" y="340" width="320" height="130" class="caixa"/>
+  <text x="540" y="370" text-anchor="middle" class="titulo">Banco de dados — MySQL</text>
+  <text x="540" y="394" text-anchor="middle" class="texto">Serviço gerenciado (Aiven for MySQL)</text>
+  <text x="540" y="414" text-anchor="middle" class="texto">Criptografia em repouso · backup automático</text>
+  <text x="540" y="434" text-anchor="middle" class="texto">Usuário próprio da aplicação (sem root)</text>
+  <path d="M540 270 L540 337" class="linha"/>
+  <text x="550" y="300" class="tls">TLS obrigatório</text>
+  <text x="550" y="316" class="rotulo">JDBC (sslMode=REQUIRED)</text>
+
+  <path d="M255 300 C300 300 310 200 377 200" class="linha"/>
+  <text x="155" y="398" text-anchor="middle" class="tls">Ponte → API: HTTPS + X-API-Key</text>
+  <text x="155" y="416" text-anchor="middle" class="rotulo">POST /records (só a ponte grava)</text>
+
+  <!-- Usuários -->
+  <rect x="790" y="120" width="180" height="90" class="caixa"/>
+  <text x="880" y="150" text-anchor="middle" class="titulo">Dashboard</text>
+  <text x="880" y="173" text-anchor="middle" class="texto">React — GitHub Pages</text>
+  <text x="880" y="191" text-anchor="middle" class="texto">(HTTPS)</text>
+  <rect x="790" y="250" width="180" height="90" class="caixa"/>
+  <text x="880" y="280" text-anchor="middle" class="titulo">App de RA</text>
+  <text x="880" y="303" text-anchor="middle" class="texto">MindAR — celular</text>
+  <text x="880" y="321" text-anchor="middle" class="texto">(HTTPS)</text>
+  <rect x="790" y="380" width="180" height="90" class="caixa"/>
+  <text x="880" y="410" text-anchor="middle" class="titulo">Ciência de Dados</text>
+  <text x="880" y="433" text-anchor="middle" class="texto">Python — análises</text>
+  <text x="880" y="451" text-anchor="middle" class="texto">(GET /records)</text>
+
+  <path d="M787 165 L703 180" class="linha"/>
+  <path d="M787 295 L703 220" class="linha"/>
+  <path d="M787 425 L703 250" class="linha"/>
+  <text x="745" y="525" text-anchor="middle" class="tls">Leitura: GET /records via HTTPS</text>
+
+  <text x="30" y="545" class="rotulo">Seta = sentido da requisição. Toda comunicação com a nuvem é criptografada (HTTPS/TLS).</text>
+</svg>

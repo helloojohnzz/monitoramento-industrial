@@ -1,0 +1,45 @@
+# Sobe a API (Spring Boot) e o banco de dados (MySQL) juntos:
+#   1. copie .env.example para .env e troque as senhas
+#   2. docker compose up -d --build
+# A API fica em http://localhost:8080 e a saúde em /actuator/health
+services:
+  # Banco de dados MySQL
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: db_industrial_monitoring
+      # Usuário próprio da aplicação (a API não usa o root)
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    # Os dados ficam num volume: não se perdem ao recriar o container
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # O banco NÃO é publicado para fora: só a API acessa, pela rede interna do Docker
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # API REST (Spring Boot)
+  api:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://db:3306/db_industrial_monitoring
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      API_KEY: ${API_KEY}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+    # Só inicia depois que o MySQL estiver pronto
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
