@@ -136,3 +136,68 @@
   background-color: var(--mt-preto);
   color: var(--mt-branco);
 }
+
+/* ---------- Gráficos em SVG ---------- */
+.grafico-svg {
+  display: block;
+  overflow: visible;
+}
+
+.grafico-svg text {
+  fill: var(--mt-cinza);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.grafico-svg .grafico-valor {
+  fill: var(--mt-preto);
+  font-weight: 600;
+}
+
+.grafico-grade,
+.grafico-eixo {
+  stroke: var(--mt-bege-borda);
+  stroke-width: 1;
+}
+
+.grafico-cruz {
+  stroke: var(--mt-cinza);
+  stroke-width: 1;
+}
+
+/* anel da cor do card em volta dos pontos */
+.grafico-ponto {
+  stroke: var(--mt-bege-claro);
+  stroke-width: 2;
+}
+
+.grafico-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--mt-cinza);
+}
+
+.grafico-legenda span::before {
+  content: '';
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.4rem;
+  border-radius: 2px;
+  background: var(--cor);
+  vertical-align: -1px;
+}
+
+.grafico-tooltip {
+  position: absolute;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  background: var(--mt-bege-claro);
+  border: 1px solid var(--mt-bege-borda);
+  border-radius: 0.4rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
