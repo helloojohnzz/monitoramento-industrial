@@ -1,3 +1,4 @@
+import os
 import statistics
 import time
 import requests
@@ -39,6 +40,29 @@ LIMITE_MAX_QUEDA_NAO_METALICA = 110
 CAPACIDADE_TANQUE = 2
 
 TIMEOUT_REQUISICAO = 3  # segundos para o timeout da API
+
+
+def ler_env_do_projeto(nome):
+  """Lê uma variável do arquivo .env da raiz do projeto (o mesmo usado pelo Docker)."""
+  caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+  try:
+    with open(caminho, encoding="utf-8") as arquivo:
+      for linha in arquivo:
+        chave, _, valor = linha.strip().partition("=")
+        if chave == nome:
+          return valor.strip()
+  except OSError:
+    pass
+  return ""
+
+
+# Envio das peças para a API (o dashboard e a RA leem os dados dela)
+API_URL = os.environ.get("API_URL", "http://localhost:8080/records")
+API_KEY = os.environ.get("API_KEY") or ler_env_do_projeto("API_KEY")
+ENVIAR_PARA_API = True
+FATOR_DISTANCIA_CM = 0.1  # valor bruto do sensor de distância -> cm (0.1 = valor em mm)
+TANQUE_METALICA = "TANK1"
+TANQUE_NAO_METALICA = "TANK2"
 DURACAO_MONITORAMENTO = 20  # segundos
 
 # Os dois sensores são lidos rápido para não perder peças em movimento.
@@ -54,6 +78,7 @@ pecas_metalicas_no_tanque = 0
 pecas_nao_metalicas_no_tanque = 0
 queda_atual = None  # tipo de queda em andamento: evita contar a mesma peça em leituras seguidas
 tanque_cheio = False
+ultima_distancia = None  # última leitura do sensor de distância (valor bruto)
 
 
 def consultar_sensor_iolink(url):
@@ -153,11 +178,12 @@ def classificar_queda(valor):
 
 def processar_tanque(guardar_no_historico):
   """Lê o sensor de distância do tanque e conta as peças que caem nele."""
-  global pecas_metalicas_no_tanque, pecas_nao_metalicas_no_tanque, queda_atual, tanque_cheio
+  global pecas_metalicas_no_tanque, pecas_nao_metalicas_no_tanque, queda_atual, tanque_cheio, ultima_distancia
 
   valor, hex_value = ler_valor(SENSORES["sensor_geral"])
   if valor is None:
     return
+  ultima_distancia = valor
 
   if guardar_no_historico:
     historico_distancias_tanque.append(valor)
@@ -183,11 +209,41 @@ def processar_tanque(guardar_no_historico):
   queda_atual = tipo
 
 
+def enviar_peca_api(eh_metalica):
+  """Grava a peça na API (POST /records), para ela aparecer no dashboard e na RA."""
+  if not ENVIAR_PARA_API:
+    return
+  distancia_cm = round((ultima_distancia or 0) * FATOR_DISTANCIA_CM, 1)
+  peca = {
+    "isMetal": eh_metalica,
+    "distance": distancia_cm,
+    "tank": TANQUE_METALICA if eh_metalica else TANQUE_NAO_METALICA,
+  }
+  cabecalhos = {"X-API-Key": API_KEY} if API_KEY else {}
+  try:
+    resposta = sessao.post(API_URL, json=peca, headers=cabecalhos, timeout=TIMEOUT_REQUISICAO)
+  except requests.exceptions.RequestException as e:
+    print(f"   -> ❌ Não foi possível enviar para a API ({API_URL}): {e}")
+    return
+
+  if resposta.ok:
+    print(f"   -> 📤 Enviada para a API ({peca['tank']}, distância {distancia_cm} cm)")
+  elif resposta.status_code == 401:
+    print("   -> ❌ API recusou a chave (401). Confira o API_KEY no arquivo .env da raiz do projeto.")
+  elif resposta.status_code == 409:
+    print(f"   -> ⚠️ {peca['tank']} está cheio: a API não registrou a peça.")
+  else:
+    print(f"   -> ❌ API respondeu HTTP {resposta.status_code}: {resposta.text[:200]}")
+
+
 def monitorar_producao():
   global total_pecas_metalicas, total_pecas_nao_metalicas
 
   print(f"Iniciando monitoramento conectado aos endpoints IO-Link por {DURACAO_MONITORAMENTO} segundos...")
-  print(f"Sensores lidos a cada {INTERVALO_LEITURA_PECAS * 1000:.0f} ms\n")
+  print(f"Sensores lidos a cada {INTERVALO_LEITURA_PECAS * 1000:.0f} ms")
+  if ENVIAR_PARA_API:
+    print(f"Peças enviadas para a API: {API_URL} ({'com' if API_KEY else 'SEM'} chave de API)")
+  print()
 
   tempo_inicio = time.time()
   ultimo_historico_tanque = 0.0
@@ -226,6 +282,7 @@ def monitorar_producao():
         if rotulo:
           total = total_pecas_metalicas + total_pecas_nao_metalicas
           print(f"[SENSOR 2 - PEÇAS] ✅ Peça {rotulo} | Pico: {maior_valor_peca} | Acumulado: {total}")
+          enviar_peca_api(tipo == "metalica")
 
         peca_presente = False
         maior_valor_peca = 0

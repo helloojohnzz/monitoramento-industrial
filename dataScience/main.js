@@ -11,7 +11,7 @@
 //   node main.js            -> lê os sensores reais (precisa estar na rede do laboratório)
 //   node main.js --simular  -> gera leituras de teste (para rodar fora do laboratório)
 
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 // Endpoints IO-Link usados (tanque e sensor de peças)
@@ -54,6 +54,27 @@ const INTERVALO_LEITURA_PECAS = 0.05 // segundos (50 ms)
 const INTERVALO_HISTORICO_TANQUE = 1.0 // segundos
 
 const MODO_SIMULACAO = process.argv.includes('--simular')
+
+// Lê uma variável do arquivo .env da raiz do projeto (o mesmo usado pelo Docker)
+function lerEnvDoProjeto(nome) {
+  try {
+    const texto = readFileSync(new URL('../.env', import.meta.url), 'utf8')
+    for (const linha of texto.split(/\r?\n/)) {
+      const [chave, ...resto] = linha.trim().split('=')
+      if (chave === nome) return resto.join('=').trim()
+    }
+  } catch {}
+  return ''
+}
+
+// Envio das peças para a API (o dashboard e a RA leem os dados dela).
+// No modo --simular nada é enviado, para não misturar dados falsos com os reais.
+const API_URL = process.env.API_URL || 'http://localhost:8080/records'
+const API_KEY = process.env.API_KEY || lerEnvDoProjeto('API_KEY')
+const ENVIAR_PARA_API = !MODO_SIMULACAO
+const FATOR_DISTANCIA_CM = 0.1 // valor bruto do sensor de distância -> cm (0.1 = valor em mm)
+const TANQUE_METALICA = 'TANK1'
+const TANQUE_NAO_METALICA = 'TANK2'
 const ARQUIVO_RELATORIO = fileURLToPath(new URL('./relatorio.html', import.meta.url))
 
 // Históricos e contadores consolidados
@@ -66,6 +87,7 @@ let pecasMetalicasNoTanque = 0
 let pecasNaoMetalicasNoTanque = 0
 let quedaAtual = null // tipo de queda em andamento: evita contar a mesma peça em leituras seguidas
 let tanqueCheio = false
+let ultimaDistancia = null // última leitura do sensor de distância (valor bruto)
 
 const esperar = (segundos) => new Promise((r) => setTimeout(r, segundos * 1000))
 
@@ -156,6 +178,7 @@ function classificarQueda(valor) {
 async function processarTanque(guardarNoHistorico, segundo) {
   const [valor, hex] = await lerValor(SENSORES.sensor_geral)
   if (valor === null) return
+  ultimaDistancia = valor
 
   if (guardarNoHistorico) {
     historicoDistanciasTanque.push({ segundo, valor })
@@ -184,6 +207,29 @@ async function processarTanque(guardarNoHistorico, segundo) {
   }
 
   quedaAtual = tipo
+}
+
+/** Grava a peça na API (POST /records), para ela aparecer no dashboard e na RA. */
+async function enviarPecaApi(ehMetalica) {
+  if (!ENVIAR_PARA_API) return
+  const distancia = Math.round((ultimaDistancia ?? 0) * FATOR_DISTANCIA_CM * 10) / 10
+  const peca = { isMetal: ehMetalica, distance: distancia, tank: ehMetalica ? TANQUE_METALICA : TANQUE_NAO_METALICA }
+  let resposta
+  try {
+    resposta = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(API_KEY && { 'X-API-Key': API_KEY }) },
+      body: JSON.stringify(peca),
+      signal: AbortSignal.timeout(TIMEOUT_REQUISICAO * 1000),
+    })
+  } catch (e) {
+    console.log(`   -> ❌ Não foi possível enviar para a API (${API_URL}): ${e.message}`)
+    return
+  }
+  if (resposta.ok) console.log(`   -> 📤 Enviada para a API (${peca.tank}, distância ${distancia} cm)`)
+  else if (resposta.status === 401) console.log('   -> ❌ API recusou a chave (401). Confira o API_KEY no arquivo .env da raiz do projeto.')
+  else if (resposta.status === 409) console.log(`   -> ⚠️ ${peca.tank} está cheio: a API não registrou a peça.`)
+  else console.log(`   -> ❌ API respondeu HTTP ${resposta.status}: ${(await resposta.text()).slice(0, 200)}`)
 }
 
 // ---------------------------------------------------------------
@@ -473,7 +519,9 @@ let redim; window.addEventListener('resize', () => { clearTimeout(redim); redim 
 
 async function monitorarProducao() {
   console.log(`Iniciando monitoramento ${MODO_SIMULACAO ? 'SIMULADO' : 'conectado aos endpoints IO-Link'} por ${DURACAO_MONITORAMENTO} segundos...`)
-  console.log(`Sensores lidos a cada ${(INTERVALO_LEITURA_PECAS * 1000).toFixed(0)} ms\n`)
+  console.log(`Sensores lidos a cada ${(INTERVALO_LEITURA_PECAS * 1000).toFixed(0)} ms`)
+  if (ENVIAR_PARA_API) console.log(`Peças enviadas para a API: ${API_URL} (${API_KEY ? 'com' : 'SEM'} chave de API)`)
+  console.log()
 
   const tempoInicio = Date.now()
   const decorrido = () => (Date.now() - tempoInicio) / 1000
@@ -513,6 +561,7 @@ async function monitorarProducao() {
         if (rotulo) {
           const total = totalPecasMetalicas + totalPecasNaoMetalicas
           console.log(`[SENSOR 2 - PEÇAS] ✅ Peça ${rotulo} | Pico: ${maiorValorPeca} | Acumulado: ${total}`)
+          await enviarPecaApi(tipo === 'metalica')
         }
 
         pecaPresente = false
