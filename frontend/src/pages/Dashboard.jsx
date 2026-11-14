@@ -2,6 +2,8 @@ import { Row, Col } from 'react-bootstrap'
 import CardIndicador from '../components/CardIndicador'
 import NivelReservatorio from '../components/NivelReservatorio'
 import GraficoBarras from '../components/GraficoBarras'
+import GraficoProporcao from '../components/GraficoProporcao'
+import GraficoDistancias from '../components/GraficoDistancias'
 import StatusConexao from '../components/StatusConexao'
 import { calcularResumo, calcularNivel, situacaoNivel, ehMetal, formatarData } from '../utils/calculos'
 
@@ -57,13 +59,13 @@ function Dashboard({ leituras, loading, erro }) {
           <NivelReservatorio nivel={resumo.nivel} />
         </Col>
         <Col md={6}>
-          <GraficoBarras
-            titulo="Metálico x não metálico"
-            itens={[
-              { rotulo: 'Metálicas', valor: resumo.metalicas, cor: 'dark' },
-              { rotulo: 'Não metálicas', valor: resumo.naoMetalicas, cor: 'primary' },
-            ]}
-          />
+          <GraficoProporcao metalicas={resumo.metalicas} naoMetalicas={resumo.naoMetalicas} />
+        </Col>
+      </Row>
+
+      <Row className="g-3 mb-3">
+        <Col xs={12}>
+          <GraficoDistancias leituras={leituras} />
         </Col>
       </Row>
 
