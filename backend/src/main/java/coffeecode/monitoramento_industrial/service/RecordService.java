@@ -25,9 +25,17 @@ public class RecordService {
         return List.of(tank1Total, tank2Total);
     }
 
-    private static final int LIMITE = 5;
+    // Capacidade de cada tanque (peças). Acima disso a API responde 409 (tanque cheio).
+    private static final int LIMITE = 50;
 
     public Record createRecord(RecordRequestDTO recordDTO) {
+
+        if (recordDTO.tank() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "O campo 'tank' é obrigatório (TANK1 ou TANK2)"
+            );
+        }
 
         List<Long> tankTotals = getTankTotal();
 
@@ -39,7 +47,7 @@ public class RecordService {
         if (total >= LIMITE) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "Tank:  " + recordDTO.tank() + "is full"
+                    "Tank " + recordDTO.tank() + " is full"
             );
         }
 
