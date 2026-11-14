@@ -1,22 +1,23 @@
 {
   "masterUrl": "http://10.110.12.41",
   "apiUrl": "http://localhost:8080/records",
-  "intervaloLeituraMs": 200,
-  "intervaloMinimoEntrePecasMs": 1000,
+  "intervaloLeituraMs": 50,
 
   "sensores": {
-    "nivel": {
+    "distancia": {
       "porta": 1,
-      "descartarBits": 2,
       "fatorParaCm": 0.1
     },
-    "presenca": {
+    "peca": {
       "porta": 2,
-      "ativoQuando": { "bit": 0 }
-    },
-    "metal": {
-      "porta": 3,
-      "ativoQuando": { "valorAbaixoDe": 32000 }
+      "presencaAPartirDe": 1500,
+      "faixaMetalica": [7000, 10000],
+      "faixaNaoMetalica": [1500, 2500]
     }
+  },
+
+  "tanques": {
+    "metalica": "TANK1",
+    "naoMetalica": "TANK2"
   }
 }

@@ -1,18 +1,23 @@
 // Ponte IO-Link -> API Spring Boot
 //
 // Lê os sensores ligados no IO-Link master (ifm AL13xx) pela API REST dele
-// e, a cada peça que passa na esteira, envia { isMetal, distance } para
+// e, a cada peça que passa na esteira, envia { isMetal, distance, tank } para
 // o POST /records do back-end, que grava no MySQL.
+//
+// A classificação segue a lógica calibrada do script dataScience/main.py:
+//   - porta 2 (sensor de peças): o valor sobe enquanto a peça passa; quando ela
+//     sai, o maior valor (pico) diz o tipo: 7000-10000 = metálica,
+//     1500-2500 = não metálica;
+//   - porta 1 (sensor de distância): mede a distância no tanque.
 //
 // Uso:
 //   node ponte.js          -> modo normal (lê o master e envia para a API)
 //   node ponte.js --teste  -> só mostra os valores dos sensores na tela
-//                             (para descobrir qual porta é qual sensor)
 
 import { readFileSync } from 'node:fs'
 
 const config = JSON.parse(readFileSync(new URL('./config.json', import.meta.url), 'utf8'))
-const { masterUrl, apiUrl, intervaloLeituraMs, intervaloMinimoEntrePecasMs, sensores } = config
+const { masterUrl, apiUrl, intervaloLeituraMs, sensores, tanques } = config
 
 // Variáveis de ambiente têm prioridade (ex.: MASTER_URL=http://10.110.12.41)
 const MASTER_URL = process.env.MASTER_URL || masterUrl
@@ -35,42 +40,16 @@ async function lerPorta(porta) {
   return parseInt(json.data.value, 16)
 }
 
-// Converte o valor bruto do sensor de nível em centímetros.
-// Sensores ifm costumam usar os 2 bits finais para as saídas de comutação
-// e o resto para a medição.
-function converterNivel(bruto, sensor) {
-  const medicao = bruto >> (sensor.descartarBits ?? 0)
-  return Math.round(medicao * (sensor.fatorParaCm ?? 1) * 10) / 10
+const dentro = (valor, [min, max]) => valor >= min && valor <= max
+
+/** Devolve 'metalica', 'nao_metalica' ou null conforme o pico do sensor de peças. */
+function classificarPeca(pico) {
+  if (dentro(pico, sensores.peca.faixaMetalica)) return 'metalica'
+  if (dentro(pico, sensores.peca.faixaNaoMetalica)) return 'nao_metalica'
+  return null
 }
 
-// Diz se um sensor do tipo liga/desliga está acionado, conforme a regra do config:
-//   { "bit": 0 }                -> acionado quando aquele bit vale 1
-//   { "valorAbaixoDe": 32000 }  -> acionado quando o valor é menor que o limite
-//   { "valorAcimaDe": 100 }     -> acionado quando o valor é maior que o limite
-// "inverter": true troca o resultado.
-function estaAtivo(bruto, sensor) {
-  const regra = sensor.ativoQuando
-  let ativo
-  if (regra.bit !== undefined) ativo = ((bruto >> regra.bit) & 1) === 1
-  else if (regra.valorAbaixoDe !== undefined) ativo = bruto < regra.valorAbaixoDe
-  else if (regra.valorAcimaDe !== undefined) ativo = bruto > regra.valorAcimaDe
-  else throw new Error('Regra "ativoQuando" inválida no config.json')
-  return regra.inverter ? !ativo : ativo
-}
-
-async function lerSensores() {
-  const [nivel, presenca, metal] = await Promise.all([
-    lerPorta(sensores.nivel.porta),
-    lerPorta(sensores.presenca.porta),
-    lerPorta(sensores.metal.porta),
-  ])
-  return {
-    bruto: { nivel, presenca, metal },
-    distancia: converterNivel(nivel, sensores.nivel),
-    temPeca: estaAtivo(presenca, sensores.presenca),
-    ehMetal: estaAtivo(metal, sensores.metal),
-  }
-}
+const paraCm = (bruto) => Math.round(bruto * (sensores.distancia.fatorParaCm ?? 1) * 10) / 10
 
 // ---------------------------------------------------------------
 // Envio para a API
@@ -83,8 +62,9 @@ const filaEnvio = []
 async function enviarPendentes() {
   while (filaEnvio.length > 0) {
     const leitura = filaEnvio[0]
+    let res
     try {
-      const res = await fetch(API_URL, {
+      res = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,12 +73,30 @@ async function enviarPendentes() {
         body: JSON.stringify(leitura),
         signal: AbortSignal.timeout(3000),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      filaEnvio.shift()
-      console.log(`✔ enviado: ${leitura.isMetal ? 'METÁLICA' : 'não metálica'} | nível ${leitura.distance} cm`)
     } catch (e) {
+      // API fora do ar: mantém na fila e tenta de novo no próximo ciclo
       console.error(`✖ API indisponível (${e.message}). ${filaEnvio.length} leitura(s) aguardando.`)
       return
+    }
+
+    const tipo = leitura.isMetal ? 'METÁLICA' : 'não metálica'
+    if (res.ok) {
+      console.log(`✔ enviado: ${tipo} | ${leitura.tank} | distância ${leitura.distance} cm`)
+      filaEnvio.shift()
+    } else if (res.status === 409) {
+      // Tanque cheio: a API recusa. Não adianta reenviar.
+      console.error(`⚠ ${leitura.tank} está cheio: peça ${tipo} não registrada.`)
+      filaEnvio.shift()
+    } else if (res.status === 401) {
+      console.error('✖ Chave de API recusada (401). Confira a variável API_KEY.')
+      return
+    } else if (res.status >= 500) {
+      console.error(`✖ Erro na API (HTTP ${res.status}). Tentando de novo depois.`)
+      return
+    } else {
+      // Outros erros (400 etc.): a leitura é inválida, descarta para não travar a fila
+      console.error(`✖ API recusou a leitura (HTTP ${res.status}): ${await res.text()}`)
+      filaEnvio.shift()
     }
   }
 }
@@ -107,44 +105,51 @@ async function enviarPendentes() {
 // Laço principal
 // ---------------------------------------------------------------
 
-let pecaNaFrente = false   // havia peça na leitura anterior?
-let pecaEraMetal = false   // o sensor indutivo acionou enquanto a peça passava?
-let ultimaPeca = 0         // horário da última peça registrada
+let pecaPresente = false // há uma peça na frente do sensor agora?
+let maiorValorPeca = 0 // maior valor lido enquanto a peça passa
 
-function processar(s) {
-  if (s.temPeca) {
-    // Enquanto a peça está na frente do sensor, guarda se em algum momento
-    // o indutivo detectou metal (a peça pode passar rápido pelo indutivo)
-    pecaEraMetal = pecaEraMetal || s.ehMetal
-    pecaNaFrente = true
+function processar(valorPeca, distanciaCm) {
+  if (valorPeca >= sensores.peca.presencaAPartirDe) {
+    // Peça entrou ou continua na frente: guarda o maior valor visto.
+    // (Uma peça metálica passa por 1500-2500 enquanto o valor sobe até 7000+,
+    //  por isso a classificação só é feita quando a peça sai.)
+    pecaPresente = true
+    maiorValorPeca = Math.max(maiorValorPeca, valorPeca)
     return
   }
 
-  // A peça acabou de sair da frente do sensor: registra uma leitura
-  if (pecaNaFrente) {
-    const agora = Date.now()
-    if (agora - ultimaPeca >= intervaloMinimoEntrePecasMs) {
-      filaEnvio.push({ isMetal: pecaEraMetal, distance: s.distancia })
-      ultimaPeca = agora
-    }
-    pecaNaFrente = false
-    pecaEraMetal = false
+  if (!pecaPresente) return
+
+  // Peça saiu da frente do sensor: classifica UMA vez pelo maior valor
+  const tipo = classificarPeca(maiorValorPeca)
+  if (tipo) {
+    const isMetal = tipo === 'metalica'
+    filaEnvio.push({
+      isMetal,
+      distance: distanciaCm,
+      tank: isMetal ? tanques.metalica : tanques.naoMetalica,
+    })
+    console.log(`→ peça ${isMetal ? 'METÁLICA' : 'não metálica'} detectada (pico ${maiorValorPeca})`)
+  } else {
+    console.log(`⚠ peça ignorada: pico ${maiorValorPeca} fora das faixas`)
   }
+  pecaPresente = false
+  maiorValorPeca = 0
 }
 
 async function ciclo() {
   try {
-    const s = await lerSensores()
+    const [valorPeca, brutoDistancia] = await Promise.all([
+      lerPorta(sensores.peca.porta),
+      lerPorta(sensores.distancia.porta),
+    ])
+    const distanciaCm = paraCm(brutoDistancia)
 
     if (MODO_TESTE) {
-      const hex = (n) => n.toString(16).toUpperCase().padStart(4, '0')
-      console.log(
-        `nível: ${hex(s.bruto.nivel)} (${s.distancia} cm) | ` +
-        `presença: ${hex(s.bruto.presenca)} (${s.temPeca ? 'PEÇA' : '-'}) | ` +
-        `metal: ${hex(s.bruto.metal)} (${s.ehMetal ? 'METAL' : '-'})`
-      )
+      const tipo = valorPeca >= sensores.peca.presencaAPartirDe ? classificarPeca(valorPeca) ?? 'peça (subindo)' : '-'
+      console.log(`peça (porta ${sensores.peca.porta}): ${valorPeca} [${tipo}] | distância (porta ${sensores.distancia.porta}): ${brutoDistancia} = ${distanciaCm} cm`)
     } else {
-      processar(s)
+      processar(valorPeca, distanciaCm)
       await enviarPendentes()
     }
   } catch (e) {
@@ -155,5 +160,8 @@ async function ciclo() {
 
 console.log(`Ponte IO-Link iniciada${MODO_TESTE ? ' (modo teste)' : ''}`)
 console.log(`  master: ${MASTER_URL}`)
-if (!MODO_TESTE) console.log(`  API:    ${API_URL}`)
+if (!MODO_TESTE) {
+  console.log(`  API:    ${API_URL}`)
+  if (!API_KEY) console.log('  ⚠ sem API_KEY: se a API exigir chave, as peças serão recusadas (401)')
+}
 ciclo()

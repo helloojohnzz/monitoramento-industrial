@@ -23,18 +23,22 @@ Antes do `npm start`, o back-end precisa estar rodando em `http://localhost:8080
 
 ## Como funciona
 
-A cada 200 ms a ponte lê as 3 portas do master
-(`/iolinkmaster/port[N]/iolinkdevice/pdin/getdata`) e:
+A cada 50 ms a ponte lê duas portas do master
+(`/iolinkmaster/port[N]/iolinkdevice/pdin/getdata`), com a mesma lógica calibrada do
+script `dataScience/main.py`:
 
-1. Quando o **sensor de presença** detecta uma peça, começa a acompanhar a peça.
-2. Enquanto a peça está na frente dele, verifica se o **sensor indutivo** detectou metal.
-3. Quando a peça sai, envia para a API:
+1. **Porta 2 (sensor de peças):** enquanto a peça passa, o valor sobe. A ponte guarda o
+   maior valor (pico). Quando a peça sai, ela classifica pelo pico:
+   - 7000 a 10000: **metálica** (vai para o `TANK1`);
+   - 1500 a 2500: **não metálica** (vai para o `TANK2`).
+2. **Porta 1 (sensor de distância):** a leitura atual vira o campo `distance`, em cm.
+3. Envia para a API:
    ```json
-   { "isMetal": true, "distance": 20.4 }
+   { "isMetal": true, "distance": 22.4, "tank": "TANK1" }
    ```
-   `distance` é a leitura do **sensor de nível** do reservatório, em centímetros.
 
 Se a API estiver fora do ar, as leituras ficam numa fila e são reenviadas depois.
+Se o tanque estiver cheio (a API responde 409), a peça é avisada na tela e descartada.
 
 ## Configuração (`config.json`)
 
@@ -43,22 +47,29 @@ Se a API estiver fora do ar, as leituras ficam numa fila e são reenviadas depoi
 | `masterUrl` | Endereço do IO-Link master |
 | `apiUrl` | Endereço do `POST /records` do back-end |
 | `intervaloLeituraMs` | De quanto em quanto tempo lê os sensores |
-| `intervaloMinimoEntrePecasMs` | Ignora "peças" mais próximas que isso (evita contar a mesma peça duas vezes) |
-| `sensores.nivel` | Porta do sensor de distância. `descartarBits` tira os bits de comutação e `fatorParaCm` converte para cm (0.1 = valor em mm) |
-| `sensores.presenca` / `sensores.metal` | Porta e regra `ativoQuando` de cada sensor liga/desliga |
-
-Regras possíveis em `ativoQuando`:
-
-- `{ "bit": 0 }`: acionado quando o bit 0 do valor vale 1
-- `{ "valorAbaixoDe": 32000 }`: acionado quando o valor é menor que o limite
-- `{ "valorAcimaDe": 100 }`: acionado quando o valor é maior que o limite
-- Acrescente `"inverter": true` para trocar o resultado
+| `sensores.distancia.porta` / `fatorParaCm` | Porta do sensor de distância e o fator para converter o valor em cm (0.1 = valor em mm) |
+| `sensores.peca.porta` | Porta do sensor que classifica as peças |
+| `sensores.peca.presencaAPartirDe` | Valor a partir do qual há uma peça na frente do sensor |
+| `sensores.peca.faixaMetalica` / `faixaNaoMetalica` | Faixas do pico para cada tipo de peça |
+| `tanques.metalica` / `tanques.naoMetalica` | Para qual tanque vai cada tipo de peça |
 
 Também dá para trocar os endereços sem mexer no arquivo:
 
 ```bash
 MASTER_URL=http://10.110.12.41 API_URL=http://localhost:8080/records npm start
 ```
+
+No Windows (cmd), com a chave da API:
+
+```bash
+set API_KEY=sua-chave&& npm start
+```
+
+## Calibrando os sensores
+
+1. Rode `npm run teste`: ele mostra o valor das duas portas a cada meio segundo.
+2. Passe uma peça metálica e uma não metálica e veja o pico de cada uma.
+3. Se precisar, ajuste as faixas e o `fatorParaCm` no `config.json`.
 
 ### API na nuvem
 
