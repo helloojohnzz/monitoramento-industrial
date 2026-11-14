@@ -21,7 +21,7 @@ Sensores (IO-Link) → ponte-iolink → API REST (Spring Boot) → MySQL
 |---|---|
 | `backend/` | API REST em Java / Spring Boot com MySQL |
 | `ponte-iolink/` | Programa em Node.js que lê os sensores do IO-Link master e envia as peças para a API |
-| `dataScience/` | Scripts de coleta e análise dos dados da esteira (Python) |
+| `dataScience/` | Coleta e análise dos dados da esteira (Python e JavaScript), com relatório em gráficos |
 | `frontend/` | Dashboard web em React + Vite + Bootstrap |
 | `realidade-aumentada/` | Aplicativo de Realidade Aumentada (A-Frame + MindAR) |
 | `docs/` | Versão publicada no GitHub Pages (dashboard e RA) |
@@ -73,6 +73,18 @@ cd ponte-iolink
 npm run teste   # só mostra os valores dos sensores
 npm start       # lê os sensores e envia as peças para a API
 ```
+
+### Ciência de Dados (JavaScript)
+
+Versão em JavaScript do `dataScience/main.py`. Lê os sensores por 20 segundos, mostra as estatísticas no terminal e gera o arquivo `dataScience/relatorio.html` com um gráfico de barras (peças metálicas x não metálicas) e um gráfico de segmentos (distâncias medidas no tanque).
+
+```bash
+cd dataScience
+npm start          # lê os sensores reais (rede do laboratório)
+npm run simular    # gera leituras de teste, para rodar fora do laboratório
+```
+
+Depois, abra `relatorio.html` no navegador.
 
 ### 3. Dashboard
 

@@ -1,0 +1,14 @@
+{
+  "name": "metaltech-ciencia-de-dados",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Monitoramento da esteira e relatório com gráficos (versão JavaScript do main.py)",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js",
+    "simular": "node main.js --simular"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
