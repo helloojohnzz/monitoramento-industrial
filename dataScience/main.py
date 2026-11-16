@@ -6,12 +6,12 @@ import requests
 # Endpoints IO-Link usados (tanque e sensor de peças)
 SENSORES = {
     "sensor_geral": {
-        "url": "http://10.110.12.41/iolinkmaster/port[1]/iolinkdevice/pdin/getdata",
+        "url": "http://10.110.12.76:5000/sensores/distancia",
         "id": 1,
         "tipo": "geral"
     },
     "sensor_metalico": {
-        "url": "http://10.110.12.41/iolinkmaster/port[2]/iolinkdevice/pdin/getdata",
+        "url": "http://10.110.12.76:5000/sensores/capacitivo",
         "id": 2,
         "tipo": "metalica"
     }
