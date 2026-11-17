@@ -29,7 +29,7 @@ Sensores (IO-Link) → ponte-iolink → API REST (Spring Boot) → MySQL
 
 ## Tecnologias
 
-- **Back-end:** Java 25, Spring Boot, Spring Data JPA, Lombok, MySQL
+- **Back-end:** Java 21, Spring Boot, Spring Data JPA, Lombok, MySQL
 - **Front-end:** React, Vite, React Router, Bootstrap
 - **Realidade Aumentada:** A-Frame, MindAR
 - **Integração com sensores:** Node.js, IO-Link (ifm)
@@ -40,7 +40,7 @@ Sensores (IO-Link) → ponte-iolink → API REST (Spring Boot) → MySQL
 
 ### 1. Back-end
 
-Requisitos: Java 25 e MySQL rodando em `localhost:3306`. O banco `db_industrial_monitoring` é criado automaticamente. Usuário e senha ficam em `backend/src/main/resources/application.properties`.
+Requisitos: Java 21 e MySQL rodando em `localhost:3306`. O banco `db_industrial_monitoring` é criado automaticamente. Usuário e senha ficam em `backend/src/main/resources/application.properties`.
 
 ```bash
 cd backend

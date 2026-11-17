@@ -23,34 +23,37 @@ public class Record implements Serializable {
     private LocalDateTime dateTime;
 
     @Column(nullable = false)
-    private boolean isMetal;
+    private String situation;
 
     @Column(nullable = false)
-    private double distance;
+    private double productionRate;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Tank tank;
+    private int metalPieces;
 
-    public Record(boolean isMetal, double distance, Tank tank) {
+    @Column(nullable = false)
+    private int nonMetalPieces;
+
+    public Record(String situation, double productionRate, int metalPieces, int nonMetalPieces) {
         this.dateTime = LocalDateTime.now();
-        this.isMetal = isMetal;
-        this.distance = distance;
-        this.tank = tank;
+        this.situation = situation;
+        this.productionRate = productionRate;
+        this.metalPieces = metalPieces;
+        this.nonMetalPieces = nonMetalPieces;
     }
 
     public Record() {
     }
-
 
     @Override
     public String toString() {
         return "Record{" +
                 "id=" + id +
                 ", dateTime=" + dateTime +
-                ", isMetal=" + isMetal +
-                ", distance=" + distance +
-                ", tank=" + tank +
+                ", situation='" + situation + '\'' +
+                ", productionRate=" + productionRate +
+                ", metalPieces=" + metalPieces +
+                ", nonMetalPieces=" + nonMetalPieces +
                 '}';
     }
 }

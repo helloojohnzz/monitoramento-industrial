@@ -1,16 +1,25 @@
 package coffeecode.monitoramento_industrial.model.dto;
 
-import coffeecode.monitoramento_industrial.model.Tank;
+import coffeecode.monitoramento_industrial.model.Record;
 
 import java.time.LocalDateTime;
 
 public record RecordResponseDTO(
         Long id,
         LocalDateTime dateTime,
-        boolean isMetal,
-        double distance,
-        Tank tank,
-        long tank1Total,
-        long tank2Total
+        String situation,
+        double productionRate,
+        int metalPieces,
+        int nonMetalPieces
 ) {
+    public static RecordResponseDTO from(Record r) {
+        return new RecordResponseDTO(
+                r.getId(),
+                r.getDateTime(),
+                r.getSituation(),
+                r.getProductionRate(),
+                r.getMetalPieces(),
+                r.getNonMetalPieces()
+        );
+    }
 }
