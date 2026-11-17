@@ -24,7 +24,12 @@ public class RecordService {
             );
         }
 
-        Record r = new Record(recordDTO.situation(), recordDTO.productionRate());
+        Record r = new Record(
+                recordDTO.situation(),
+                recordDTO.productionRate(),
+                recordDTO.metalPieces(),
+                recordDTO.nonMetalPieces()
+        );
 
         return RecordResponseDTO.from(recordRepository.save(r));
     }

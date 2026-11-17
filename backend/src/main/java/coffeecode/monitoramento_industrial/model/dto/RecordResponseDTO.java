@@ -8,14 +8,18 @@ public record RecordResponseDTO(
         Long id,
         LocalDateTime dateTime,
         String situation,
-        double productionRate
+        double productionRate,
+        int metalPieces,
+        int nonMetalPieces
 ) {
     public static RecordResponseDTO from(Record r) {
         return new RecordResponseDTO(
                 r.getId(),
                 r.getDateTime(),
                 r.getSituation(),
-                r.getProductionRate()
+                r.getProductionRate(),
+                r.getMetalPieces(),
+                r.getNonMetalPieces()
         );
     }
 }
