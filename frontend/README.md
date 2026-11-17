@@ -9,8 +9,7 @@ Dashboard web do Projeto Interdisciplinar II (MetalTech). Mostra a contagem de p
 ```bash
 cd frontend
 npm install
-npm run server   # API de teste (JSON Server) em http://localhost:3000
-npm run dev      # em outro terminal: abre o dashboard
+npm run dev
 ```
 
 ## Telas
@@ -21,10 +20,9 @@ npm run dev      # em outro terminal: abre o dashboard
 
 ## Ligando na API Spring Boot
 
-1. Copie `.env.example` para `.env`.
-2. Troque o endereço para `VITE_API_URL=http://localhost:8080`.
+O painel usa `http://localhost:8080` por padrão. Para usar outra API, defina `VITE_API_URL` em `frontend/.env`. Para testar com JSON Server, use `http://localhost:3000` e rode `npm run server`.
 
-O front espera `GET /records` retornando a lista de `Record` (`id`, `dateTime`, `metal` ou `isMetal`, `distance`). O back-end precisa liberar CORS para o endereço do front.
+O painel consulta `GET /records` e soma `metalPieces` e `nonMetalPieces`. Usa `dateTime` para exibir a data das leituras, `productionRate` para exibir a taxa mais recente e `distance` para calcular o nível quando há medição. Os dados de demonstração também aceitam o formato anterior com `metal` ou `isMetal`. O backend precisa liberar CORS para o endereço do painel.
 
 O nível do reservatório é calculado a partir de `distance`: o sensor fica no topo de um reservatório de 30 cm, então quanto menor a distância, mais cheio. Essa altura e os limites de alerta ficam em `src/config.js`.
 

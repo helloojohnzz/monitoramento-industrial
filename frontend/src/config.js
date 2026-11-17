@@ -1,5 +1,5 @@
 // Endereço da API (definido no arquivo .env). Se não existir, usa o JSON Server.
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // Endpoint com as leituras da esteira (entidade Record do back-end)
 export const URL_LEITURAS = `${API_URL}/records`
