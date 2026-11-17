@@ -95,7 +95,7 @@ def classificar_queda(valor):
 
 
 def enviar_resumo_api(
-    total_metalicas, total_nao_metalicas, tempo_decorrido, tanque_cheio, sessao
+    total_metalicas, total_nao_metalicas, tempo_decorrido, tanque_cheio, sessao, distancia_cm=None
 ):
   """Envia o resumo final em JSON no formato exato solicitado para a API."""
   situation = "cheio" if tanque_cheio else "ok"
@@ -110,7 +110,8 @@ def enviar_resumo_api(
       "metalPieces": int(total_metalicas),
       "nonMetalPieces": int(total_nao_metalicas),
       "situation": situation,
-      "productionRate": float(f"{taxa_por_minuto:.2f}"),
+      "productionRate": round(taxa_por_minuto, 2),
+      "distance": distancia_cm,
   }
 
   cabecalhos = {"X-API-Key": API_KEY} if API_KEY else {}
@@ -142,6 +143,7 @@ def executar_monitoramento():
   sessao = requests.Session()
 
   with open(NOME_ARQUIVO_CSV, mode="w", newline="", encoding="utf-8-sig") as f:
+    ultima_distancia_cm = None
     writer = csv.writer(f, delimiter=";")
     writer.writerow(CABECALHO_CSV)
 
@@ -228,6 +230,7 @@ def executar_monitoramento():
       tot_tanque = pecas_metalicas_no_tanque + pecas_nao_metalicas_no_tanque
 
       timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+      ultima_distancia_cm = cm_tanque
       writer.writerow([
           timestamp_str,
           val_tanque,
@@ -272,6 +275,7 @@ def executar_monitoramento():
         tempo_total_real,
         tanque_cheio,
         sessao,
+        ultima_distancia_cm,
     )
 
 

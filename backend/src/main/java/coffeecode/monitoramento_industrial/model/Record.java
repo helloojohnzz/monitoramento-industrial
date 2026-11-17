@@ -26,20 +26,27 @@ public class Record implements Serializable {
     private String situation;
 
     @Column(nullable = false)
-    private double productionRate;
+    private Double productionRate;
 
     @Column(nullable = false)
-    private int metalPieces;
+    private Integer metalPieces;
 
     @Column(nullable = false)
-    private int nonMetalPieces;
+    private Integer nonMetalPieces;
 
-    public Record(String situation, double productionRate, int metalPieces, int nonMetalPieces) {
+    private Double distance;
+
+    // Columns retained for records written by the previous API.
+    private Boolean isMetal;
+    private String tank;
+
+    public Record(String situation, double productionRate, int metalPieces, int nonMetalPieces, Double distance) {
         this.dateTime = LocalDateTime.now();
         this.situation = situation;
         this.productionRate = productionRate;
         this.metalPieces = metalPieces;
         this.nonMetalPieces = nonMetalPieces;
+        this.distance = distance;
     }
 
     public Record() {

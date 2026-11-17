@@ -15,7 +15,10 @@ function GraficoDistancias({ leituras, quantidade = 50 }) {
   const [ref, largura] = useLargura()
   const [foco, setFoco] = useState(null)
 
-  const pontos = leituras.slice(-quantidade).map((l) => ({ id: l.id, hora: l.dateTime, valor: Number(l.distance) }))
+  const pontos = leituras
+    .filter((l) => Number.isFinite(l.distance))
+    .slice(-quantidade)
+    .map((l) => ({ id: l.id, hora: l.dateTime, valor: l.distance }))
 
   const W = Math.max(260, largura)
   const estreito = W < 500
