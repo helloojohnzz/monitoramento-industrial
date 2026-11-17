@@ -62,8 +62,6 @@ API_URL = os.environ.get("API_URL", "http://localhost:8080/records")
 API_KEY = os.environ.get("API_KEY") or ler_env_do_projeto("API_KEY")
 ENVIAR_PARA_API = True
 FATOR_DISTANCIA_CM = 0.1
-TANQUE_METALICA = "TANK1"
-TANQUE_NAO_METALICA = "TANK2"
 DURACAO_MONITORAMENTO = 20
 
 INTERVALO_LEITURA_PECAS = 0.05  # 50 ms
@@ -73,7 +71,6 @@ sessao = requests.Session()
 pecas_metalicas_no_tanque = 0
 pecas_nao_metalicas_no_tanque = 0
 queda_atual = None
-tanque_cheio = False
 
 # Configuração do arquivo CSV unificado
 NOME_ARQUIVO_CSV = (
@@ -163,23 +160,27 @@ def classificar_queda(valor):
   return None
 
 
-def enviar_peca_api(eh_metalica, ultima_distancia):
+def enviar_peca_api(tipo_peca, distancia_cm, tempo_decorrido, total_tanque):
   """Grava a peça na API (POST /records)."""
   if not ENVIAR_PARA_API:
     return
-  distancia_cm = round((ultima_distancia or 0) * FATOR_DISTANCIA_CM, 1)
+  total_pecas = total_pecas_metalicas + total_pecas_nao_metalicas
+  taxa_por_minuto = total_pecas * 60 / tempo_decorrido if tempo_decorrido > 0 else 0
   peca = {
-      "isMetal": eh_metalica,
+      "metalPieces": int(tipo_peca == "metalica"),
+      "nonMetalPieces": int(tipo_peca == "nao_metalica"),
+      "situation": "cheio" if total_tanque >= CAPACIDADE_TANQUE else "ok",
+      "productionRate": round(taxa_por_minuto, 2),
       "distance": distancia_cm,
-      "tank": TANQUE_METALICA if eh_metalica else TANQUE_NAO_METALICA,
   }
   cabecalhos = {"X-API-Key": API_KEY} if API_KEY else {}
   try:
-    sessao.post(
+    resposta = sessao.post(
         API_URL, json=peca, headers=cabecalhos, timeout=TIMEOUT_REQUISICAO
     )
-  except requests.exceptions.RequestException:
-    pass
+    resposta.raise_for_status()
+  except requests.exceptions.RequestException as erro:
+    print(f"Falha ao gravar peça na API: {erro}", flush=True)
 
 
 def exibir_estatisticas_finais(tempo_total_decorrido):
@@ -207,7 +208,7 @@ def exibir_estatisticas_finais(tempo_total_decorrido):
 def monitorar_producao():
   global total_pecas_metalicas, total_pecas_nao_metalicas
   global pecas_metalicas_no_tanque, pecas_nao_metalicas_no_tanque
-  global queda_atual, tanque_cheio
+  global queda_atual
 
   print(
       "Iniciando monitoramento unificado de ambos os sensores por"
@@ -274,12 +275,15 @@ def monitorar_producao():
           evento_atual = "peca_ignorada"
           classificacao_atual = "fora_faixa"
 
-        total_geral = total_pecas_metalicas + total_pecas_nao_metalicas
         print(
             f"[SENSOR 2] Peça classificada: {classificacao_atual} (Pico:"
             f" {maior_valor_peca})"
         )
-        enviar_peca_api(tipo_peca == "metalica", val_s1)
+        if tipo_peca:
+          enviar_peca_api(
+              tipo_peca, dist_cm_s1, time.time() - tempo_inicio,
+              pecas_metalicas_no_tanque + pecas_nao_metalicas_no_tanque,
+          )
 
         peca_presente = False
         maior_valor_peca = 0

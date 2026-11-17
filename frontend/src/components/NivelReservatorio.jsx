@@ -11,12 +11,12 @@ function NivelReservatorio({ nivel }) {
           <Card.Subtitle className="text-muted">Nível do reservatório</Card.Subtitle>
           <Badge bg={situacao.cor}>{situacao.texto}</Badge>
         </div>
-        <ProgressBar
+        {nivel != null && <ProgressBar
           now={nivel}
           label={`${nivel}%`}
           variant={situacao.cor}
           style={{ height: '2rem' }}
-        />
+        />}
         {/* Renderização condicional: aviso só aparece quando o nível está crítico */}
         {situacao.cor === 'danger' && (
           <Alert variant="danger" className="fw-bold mt-2 mb-0 py-2">

@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { Table, Form, Badge } from 'react-bootstrap'
+import { Table, Form } from 'react-bootstrap'
 import StatusConexao from '../components/StatusConexao'
-import { ehMetal, calcularNivel, formatarData } from '../utils/calculos'
+import { contarPecas, calcularNivel, formatarData } from '../utils/calculos'
 
 function Historico({ leituras, loading, erro }) {
   // Filtro controlado pelo formulário
   const [filtro, setFiltro] = useState('todas')
 
   const filtradas = leituras.filter((l) => {
-    if (filtro === 'metalicas') return ehMetal(l)
-    if (filtro === 'nao-metalicas') return !ehMetal(l)
+    const { metalicas, naoMetalicas } = contarPecas(l)
+    if (filtro === 'metalicas') return metalicas > 0
+    if (filtro === 'nao-metalicas') return naoMetalicas > 0
     return true
   })
 
@@ -32,7 +33,9 @@ function Historico({ leituras, loading, erro }) {
           <tr>
             <th>#</th>
             <th>Data/hora</th>
-            <th>Tipo</th>
+            <th>Metálicas</th>
+            <th>Não metálicas</th>
+            <th>Situação</th>
             <th>Distância (cm)</th>
             <th>Nível (%)</th>
           </tr>
@@ -42,13 +45,11 @@ function Historico({ leituras, loading, erro }) {
             <tr key={l.id}>
               <td>{l.id}</td>
               <td>{formatarData(l.dateTime)}</td>
-              <td>
-                {ehMetal(l)
-                  ? <Badge bg="dark">Metálica</Badge>
-                  : <Badge bg="primary">Não metálica</Badge>}
-              </td>
-              <td>{l.distance}</td>
-              <td>{calcularNivel(l.distance)}</td>
+              <td>{contarPecas(l).metalicas}</td>
+              <td>{contarPecas(l).naoMetalicas}</td>
+              <td>{l.situation === 'unknown' || !l.situation ? '—' : l.situation}</td>
+              <td>{l.distance ?? '—'}</td>
+              <td>{calcularNivel(l.distance) ?? '—'}</td>
             </tr>
           ))}
         </tbody>
