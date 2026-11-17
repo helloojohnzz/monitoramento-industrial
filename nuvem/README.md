@@ -16,7 +16,7 @@ para as seções **2.4** e **4.4** do relatório técnico.
 | Camada | Onde roda | Tecnologia |
 |---|---|---|
 | Sensores e ponte IO-Link | Laboratório (rede local) | IO-Link master ifm + Node.js |
-| API REST | **Nuvem — PaaS** (Render, Web Service com Docker) | Java 25 / Spring Boot |
+| API REST | **Nuvem — PaaS** (Render, Web Service com Docker) | Java 21 / Spring Boot |
 | Banco de dados | **Nuvem — DBaaS** (Aiven for MySQL) | MySQL 8 gerenciado |
 | Dashboard | GitHub Pages (hospedagem estática) | React + Vite |
 | App de RA | GitHub Pages, aberto no celular | A-Frame + MindAR |
