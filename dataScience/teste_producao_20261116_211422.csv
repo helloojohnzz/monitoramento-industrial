@@ -1,0 +1,6 @@
+﻿timestamp;sensor_1_dec;sensor_1_cm;sensor_2_dec;evento;classificacao;total_geral;pecas_no_tanque
+2026-11-16 21:14:26.497;220;22.0;198;queda_tanque;metalica;0;1
+2026-11-16 21:14:30.652;495;49.5;180;leitura_normal;;0;1
+2026-11-16 21:14:34.804;505;50.5;191;leitura_normal;;0;1
+2026-11-16 21:14:38.961;518;51.8;212;leitura_normal;;0;1
+2026-11-16 21:14:43.113;501;50.1;214;leitura_normal;;0;1
