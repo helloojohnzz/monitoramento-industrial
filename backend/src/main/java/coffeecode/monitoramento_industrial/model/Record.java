@@ -28,10 +28,18 @@ public class Record implements Serializable {
     @Column(nullable = false)
     private double productionRate;
 
-    public Record(String situation, double productionRate) {
+    @Column(nullable = false)
+    private int metalPieces;
+
+    @Column(nullable = false)
+    private int nonMetalPieces;
+
+    public Record(String situation, double productionRate, int metalPieces, int nonMetalPieces) {
         this.dateTime = LocalDateTime.now();
         this.situation = situation;
         this.productionRate = productionRate;
+        this.metalPieces = metalPieces;
+        this.nonMetalPieces = nonMetalPieces;
     }
 
     public Record() {
@@ -44,6 +52,8 @@ public class Record implements Serializable {
                 ", dateTime=" + dateTime +
                 ", situation='" + situation + '\'' +
                 ", productionRate=" + productionRate +
+                ", metalPieces=" + metalPieces +
+                ", nonMetalPieces=" + nonMetalPieces +
                 '}';
     }
 }
