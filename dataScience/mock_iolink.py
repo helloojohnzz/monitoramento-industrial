@@ -46,5 +46,5 @@ def sensor_capacitivo():
     })
 
 if __name__ == '__main__':
-    print("🚀 Servidor Mock IO-Link (Dinâmico) rodando em http://localhost:5000")
+    print("Servidor Mock IO-Link (Dinâmico) rodando em http://localhost:5000")
     app.run(host='0.0.0.0', port=5000)
