@@ -10,6 +10,8 @@ function Alertas({ leituras, loading, erro }) {
     .filter((l) => l.nivel >= NIVEL_ATENCAO)
     .reverse()
 
+  const temMedicao = leituras.some((l) => Number.isFinite(l.distance))
+
   return (
     <>
       <h1 className="h3 mb-3">Alertas do reservatório</h1>
@@ -19,7 +21,9 @@ function Alertas({ leituras, loading, erro }) {
         Atenção a partir de {NIVEL_ATENCAO}% e crítico a partir de {NIVEL_CRITICO}% da capacidade.
       </p>
 
-      {alertas.length === 0 ? (
+      {!temMedicao ? (
+        <Alert variant="secondary">Nenhuma medição do reservatório disponível.</Alert>
+      ) : alertas.length === 0 ? (
         <Alert variant="success">Nenhum alerta. O reservatório está dentro do normal.</Alert>
       ) : (
         <Table striped bordered responsive size="sm">

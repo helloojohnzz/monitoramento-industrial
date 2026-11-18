@@ -1,7 +1,7 @@
 // ===== Configurações =====
 // Endereço da API. Pode ser trocado pela URL: index.html?api=http://IP-DO-PC:8080
 const parametros = new URLSearchParams(window.location.search);
-const API_URL = parametros.get('api') || 'http://localhost:3000';
+const API_URL = parametros.get('api') || 'http://localhost:8080';
 const URL_LEITURAS = API_URL + '/records';
 
 const INTERVALO = 3000;            // atualiza a cada 3 segundos
@@ -13,11 +13,8 @@ const ALTURA_TUBO = 0.5;           // altura do cilindro na cena
 const status = document.getElementById('status');
 
 // ===== Regras (iguais às do front-end) =====
-function ehMetal(leitura) {
-    return leitura.metal ?? leitura.isMetal;
-}
-
 function calcularNivel(distancia) {
+    if (!Number.isFinite(distancia)) return null;
     const nivel = ((ALTURA_RESERVATORIO_CM - distancia) / ALTURA_RESERVATORIO_CM) * 100;
     return Math.min(100, Math.max(0, Math.round(nivel)));
 }
@@ -35,7 +32,9 @@ function corDoNivel(nivel) {
 async function buscarLeituras() {
     try {
         const res = await fetch(URL_LEITURAS);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const dados = await res.json();
+        if (!Array.isArray(dados)) throw new Error("Resposta inesperada da API");
         return { leituras: dados, demo: false };
     } catch (e) {
         const res = await fetch('./dados-demo.json');
@@ -46,18 +45,23 @@ async function buscarLeituras() {
 
 // ===== Atualiza a cena =====
 function atualizarCena(leituras) {
-    const metalicas = leituras.filter(ehMetal).length;
-    const naoMetalicas = leituras.length - metalicas;
+    let metalicas = 0;
+    let naoMetalicas = 0;
+    for (const leitura of leituras) {
+        const metal = leitura.metal ?? leitura.isMetal;
+        metalicas += leitura.metalPieces ?? Number(metal === true);
+        naoMetalicas += leitura.nonMetalPieces ?? Number(metal === false);
+    }
     const ultima = leituras[leituras.length - 1];
-    const nivel = ultima ? calcularNivel(ultima.distance) : 0;
+    const nivel = calcularNivel(ultima?.distance);
     const cor = corDoNivel(nivel);
 
     document.getElementById('txt-metalicas').setAttribute('value', metalicas);
     document.getElementById('txt-nao-metalicas').setAttribute('value', naoMetalicas);
-    document.getElementById('txt-total').setAttribute('value', leituras.length);
+    document.getElementById('txt-total').setAttribute('value', metalicas + naoMetalicas);
 
     const txtNivel = document.getElementById('txt-nivel');
-    txtNivel.setAttribute('value', 'Reservatorio: ' + nivel + '%');
+    txtNivel.setAttribute('value', nivel == null ? 'Reservatorio: sem medicao' : 'Reservatorio: ' + nivel + '%');
 
     let alerta = '';
     if (nivel >= NIVEL_CRITICO) alerta = 'ALERTA: reservatorio quase cheio!';

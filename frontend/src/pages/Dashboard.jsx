@@ -5,7 +5,7 @@ import GraficoBarras from '../components/GraficoBarras'
 import GraficoProporcao from '../components/GraficoProporcao'
 import GraficoDistancias from '../components/GraficoDistancias'
 import StatusConexao from '../components/StatusConexao'
-import { calcularResumo, calcularNivel, situacaoNivel, ehMetal, formatarData } from '../utils/calculos'
+import { calcularResumo, calcularNivel, situacaoNivel, contarPecas, formatarData } from '../utils/calculos'
 
 // Agrupa as leituras por hora para ver a evolução da contagem
 const contarPorHora = (leituras) => {
@@ -13,8 +13,9 @@ const contarPorHora = (leituras) => {
   leituras.forEach((l) => {
     const hora = new Date(l.dateTime).getHours() + 'h'
     if (!grupos[hora]) grupos[hora] = { metalicas: 0, naoMetalicas: 0 }
-    if (ehMetal(l)) grupos[hora].metalicas++
-    else grupos[hora].naoMetalicas++
+    const { metalicas, naoMetalicas } = contarPecas(l)
+    grupos[hora].metalicas += metalicas
+    grupos[hora].naoMetalicas += naoMetalicas
   })
   return grupos
 }
@@ -24,7 +25,7 @@ function Dashboard({ leituras, loading, erro }) {
   const porHora = contarPorHora(leituras)
 
   // Últimas 10 leituras do nível do reservatório
-  const ultimosNiveis = leituras.slice(-10).map((l) => {
+  const ultimosNiveis = leituras.filter((l) => Number.isFinite(l.distance)).slice(-10).map((l) => {
     const nivel = calcularNivel(l.distance)
     return {
       rotulo: new Date(l.dateTime).toLocaleTimeString('pt-BR'),
@@ -37,7 +38,10 @@ function Dashboard({ leituras, loading, erro }) {
     <>
       <div className="d-flex flex-wrap justify-content-between align-items-end mb-3">
         <h1 className="h3 mb-0">Esteira de triagem</h1>
-        <small className="text-muted">Última leitura: {formatarData(resumo.atualizadoEm)}</small>
+        <div className="small text-muted">
+          {resumo.taxa != null && <div>Taxa de produção: {resumo.taxa.toLocaleString('pt-BR')} peças/min</div>}
+          <div>Última leitura: {formatarData(resumo.atualizadoEm)}</div>
+        </div>
       </div>
 
       <StatusConexao loading={loading} erro={erro} temDados={leituras.length > 0} />

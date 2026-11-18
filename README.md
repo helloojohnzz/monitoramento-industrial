@@ -52,7 +52,11 @@ A API sobe em `http://localhost:8080`.
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/records` | Lista todas as leituras |
-| POST | `/records` | Registra uma nova leitura (peça) |
+| POST | `/records` | Registra uma peça ou um lote de produção |
+
+Cada registro informa `metalPieces` e `nonMetalPieces` (incrementos naquele registro),
+`situation` (`ok` ou `cheio`), `productionRate` (peças por minuto) e, quando
+disponível, `distance` (centímetros). O painel soma os incrementos dos registros.
 
 #### Com Docker
 
@@ -74,6 +78,17 @@ npm run teste   # só mostra os valores dos sensores
 npm start       # lê os sensores e envia as peças para a API
 ```
 
+### Monitoramento com Python
+
+Com a API em execução, instale `flask` e `requests` no ambiente Python. Em um
+terminal, rode `python dataScience/mock_iolink.py`. Em outro, rode
+`python dataScience/main.py` para enviar cada peça detectada à API. Para
+testar o envio de um único resumo ao final da coleta, use
+`python dataScience/teste_monitoramento.py` como opção de teste independente.
+
+`API_URL` pode apontar para outra API e deve incluir `/records`. O padrão
+é `http://localhost:8080/records`. Defina `API_KEY` quando exigida pela API.
+
 ### Ciência de Dados (JavaScript)
 
 Versão em JavaScript do `dataScience/main.py`. Lê os sensores por 20 segundos, mostra as estatísticas no terminal e gera o arquivo `dataScience/relatorio.html` com um gráfico de barras (peças metálicas x não metálicas) e um gráfico de segmentos (distâncias medidas no tanque).
@@ -91,11 +106,10 @@ Depois, abra `relatorio.html` no navegador.
 ```bash
 cd frontend
 npm install
-npm run server   # API de teste (JSON Server) em http://localhost:3000
 npm run dev      # abre o dashboard
 ```
 
-Para usar a API Spring Boot, copie `.env.example` para `.env` e defina `VITE_API_URL=http://localhost:8080`.
+O painel usa a API Spring Boot em `http://localhost:8080` por padrão. Para usar o JSON Server, defina `VITE_API_URL=http://localhost:3000` em `frontend/.env` e rode `npm run server` em outro terminal.
 
 Telas: **Dashboard** (totais, nível do reservatório e gráficos), **Histórico** (tabela com filtro por tipo de peça) e **Alertas** (reservatório acima de 70% ou 90%).
 
@@ -119,3 +133,11 @@ Se a API não responder, o app entra em modo demonstração com dados de exemplo
 - João Paulo Oliveira
 - Eduardo Bruno Coppi
 - Beatriz Cardoso Rocha
+
+## Documentação técnica
+
+O relatório segue o modelo disponibilizado no Classroom da Atividade Interdisciplinar e documenta as seis unidades curriculares, a API, a arquitetura, a análise dos CSVs e o estado da integração.
+
+- [Ler o relatório no GitHub](docs/RELATORIO_TECNICO.md)
+- [Baixar o relatório editável em Word](docs/Relatorio_Tecnico_MetalTech.docx)
+
