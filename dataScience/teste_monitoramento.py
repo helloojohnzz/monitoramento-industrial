@@ -115,7 +115,7 @@ def enviar_resumo_api(
   }
 
   cabecalhos = {"X-API-Key": API_KEY} if API_KEY else {}
-  print(f"\n🌐 Enviando resumo final para {API_URL}...")
+  print(f"\n Enviando resumo final para {API_URL}...")
   print(f"Payload: {payload}")
 
   try:
@@ -126,19 +126,19 @@ def enviar_resumo_api(
       print("   -> ✅ Resumo enviado com sucesso para a API!")
     else:
       print(
-          f"   -> ⚠️ API respondeu com erro HTTP {resposta.status_code}:"
+          f"   -> API respondeu com erro HTTP {resposta.status_code}:"
           f" {resposta.text[:200]}"
       )
   except requests.exceptions.RequestException as e:
-    print(f"   -> ⚠️ Falha de conexão ao enviar para a API ({API_URL}): {e}")
+    print(f"   -> Falha de conexão ao enviar para a API ({API_URL}): {e}")
 
 
 def executar_monitoramento():
   global total_pecas_metalicas, total_pecas_nao_metalicas
   global pecas_metalicas_no_tanque, pecas_nao_metalicas_no_tanque, tanque_cheio
 
-  print("🚀 Iniciando novo script de teste conectado ao Mock...")
-  print(f"📁 Salvando logs em: {NOME_ARQUIVO_CSV}\n")
+  print(" Iniciando novo script de teste conectado ao Mock...")
+  print(f" Salvando logs em: {NOME_ARQUIVO_CSV}\n")
 
   sessao = requests.Session()
 
@@ -182,14 +182,14 @@ def executar_monitoramento():
 
           evento = "queda_tanque"
           classificacao = tipo_queda
-          print(f"📦 [TANQUE] Peça {tipo_queda} caiu! (Nível: {val_tanque})")
+          print(f" [TANQUE] Peça {tipo_queda} caiu! (Nível: {val_tanque})")
 
           if (
               pecas_metalicas_no_tanque + pecas_nao_metalicas_no_tanque
           ) >= CAPACIDADE_TANQUE:
             tanque_cheio = True
             print(
-                "🛑 [ALERTA] Tanque cheio atingido! Nenhuma nova queda será"
+                " [ALERTA] Tanque cheio atingido! Nenhuma nova queda será"
                 " aceita."
             )
 
@@ -218,7 +218,7 @@ def executar_monitoramento():
 
         if tipo_peca:
           print(
-              f"⚙️ [ESTEIRA] Peça classificada: {tipo_peca.upper()} (Pico:"
+              f" [ESTEIRA] Peça classificada: {tipo_peca.upper()} (Pico:"
               f" {pico_capacitivo})"
           )
 
@@ -249,7 +249,7 @@ def executar_monitoramento():
 
     # Estatísticas Finais
     print("\n" + "=" * 50)
-    print("🏁 TESTE ENCERRADO - ESTATÍSTICAS FINAIS")
+    print(" TESTE ENCERRADO - ESTATÍSTICAS FINAIS")
     print("=" * 50)
     print(
         "• Total de Peças Contadas na Esteira:"
@@ -263,7 +263,7 @@ def executar_monitoramento():
     )
     print(
         "• Status do Tanque:"
-        f" {'CHEIO 🛑' if tanque_cheio else 'OK (Não Cheio)'}"
+        f" {'CHEIO ' if tanque_cheio else 'OK (Não Cheio)'}"
     )
     print(f"• Arquivo CSV salvo em: {os.path.abspath(NOME_ARQUIVO_CSV)}")
     print("=" * 50)
