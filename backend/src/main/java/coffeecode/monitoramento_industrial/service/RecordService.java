@@ -14,53 +14,63 @@ import java.util.List;
 
 @Service
 public class RecordService {
+
     @Autowired
     private RecordRepository recordRepository;
 
-    public RecordResponseDTO createRecord(RecordRequestDTO recordDTO) {
-        boolean legacy = recordDTO.isMetal() != null && recordDTO.situation() == null;
-        if (!legacy && (recordDTO.situation() == null || recordDTO.situation().isBlank())) {
+    public RecordResponseDTO createRecord(RecordRequestDTO dto) {
+        if (dto.situation() == null || dto.situation().isBlank()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "O campo 'situation' é obrigatório"
             );
         }
 
-        Double distance = recordDTO.distance();
-        if (distance != null && (!Double.isFinite(distance) || distance < 0)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid distance");
+        if (dto.metalPieces() == null || dto.metalPieces() < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "'metalPieces' deve ser um inteiro maior ou igual a zero"
+            );
         }
 
-        Integer metalPieces = recordDTO.metalPieces();
-        Integer nonMetalPieces = recordDTO.nonMetalPieces();
-        Double productionRate = recordDTO.productionRate();
-        if (legacy) {
-            metalPieces = recordDTO.isMetal() ? 1 : 0;
-            nonMetalPieces = recordDTO.isMetal() ? 0 : 1;
-            productionRate = 0.0;
-        } else if (metalPieces == null || metalPieces < 0
-                || nonMetalPieces == null || nonMetalPieces < 0
-                || productionRate == null || !Double.isFinite(productionRate) || productionRate < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid production measurement");
+        if (dto.nonMetalPieces() == null || dto.nonMetalPieces() < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "'nonMetalPieces' deve ser um inteiro maior ou igual a zero"
+            );
         }
 
-        Record r = new Record(
-                legacy ? "unknown" : recordDTO.situation(),
-                productionRate,
-                metalPieces,
-                nonMetalPieces,
-                distance
+        if (dto.productionRate() == null
+                || !Double.isFinite(dto.productionRate())
+                || dto.productionRate() < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "'productionRate' deve ser um número finito maior ou igual a zero"
+            );
+        }
+
+        if (dto.distance() != null
+                && (!Double.isFinite(dto.distance()) || dto.distance() < 0)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "'distance' deve ser um número finito maior ou igual a zero"
+            );
+        }
+
+        Record record = new Record(
+                dto.situation(),
+                dto.productionRate(),
+                dto.metalPieces(),
+                dto.nonMetalPieces(),
+                dto.distance()
         );
 
-        if (legacy) {
-            r.setIsMetal(recordDTO.isMetal());
-            r.setTank(recordDTO.tank());
-        }
-        return RecordResponseDTO.from(recordRepository.save(r));
+        return RecordResponseDTO.from(recordRepository.save(record));
     }
 
     public List<RecordResponseDTO> listRecords() {
-        return recordRepository.findAll(Sort.by("dateTime", "id"))
+        return recordRepository
+                .findAll(Sort.by("dateTime", "id"))
                 .stream()
                 .map(RecordResponseDTO::from)
                 .toList();

@@ -9,21 +9,20 @@ public record RecordResponseDTO(
         LocalDateTime dateTime,
         String situation,
         Double productionRate,
-        int metalPieces,
-        int nonMetalPieces,
+        Integer metalPieces,
+        Integer nonMetalPieces,
         Double distance
 ) {
-    public static RecordResponseDTO from(Record r) {
-        boolean legacyMetal = Boolean.TRUE.equals(r.getIsMetal());
-        boolean legacyNonMetal = Boolean.FALSE.equals(r.getIsMetal());
+
+    public static RecordResponseDTO from(Record record) {
         return new RecordResponseDTO(
-                r.getId(),
-                r.getDateTime(),
-                r.getSituation(),
-                r.getIsMetal() == null ? r.getProductionRate() : null,
-                r.getMetalPieces() == null ? (legacyMetal ? 1 : 0) : r.getMetalPieces(),
-                r.getNonMetalPieces() == null ? (legacyNonMetal ? 1 : 0) : r.getNonMetalPieces(),
-                r.getDistance()
+                record.getId(),
+                record.getDateTime(),
+                record.getSituation(),
+                record.getProductionRate(),
+                record.getMetalPieces(),
+                record.getNonMetalPieces(),
+                record.getDistance()
         );
     }
 }

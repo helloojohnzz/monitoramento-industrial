@@ -3,314 +3,551 @@ from datetime import datetime
 import os
 import statistics
 import time
+
 import requests
 
-# Endpoints IO-Link usados (ajustado para o mock local ou IP real)
+
 SENSORES = {
-    "sensor_geral": {
-        "url": "http://localhost:5000/sensores/distancia",
-        "id": 1,
-        "tipo": "geral",
-    },
-    "sensor_metalico": {
-        "url": "http://localhost:5000/sensores/capacitivo",
-        "id": 2,
-        "tipo": "metalica",
-    },
+    "geral": "http://10.110.12.37:5000/sensores/distancia",
+    "indutivo": "http://10.110.12.37:5000/sensores/indutivo",
+    "capacitivo": "http://10.110.12.37:5000/sensores/capacitivo",
 }
 
-# Históricos e contadores consolidados
-historico_distancias_tanque = []
-total_pecas_metalicas = 0
-total_pecas_nao_metalicas = 0
-
-# Faixas do sensor metálico (porta 2)
+# Limites confirmados anteriormente.
 LIMITE_MIN_METALICA = 7000
 LIMITE_MAX_METALICA = 10000
 
-LIMITE_MIN_NAO_METALICA = 1500
-LIMITE_MAX_NAO_METALICA = 2500
+LIMITE_MIN_NAO_METALICA = 1800
+LIMITE_MAX_NAO_METALICA = 2000
 
-# Faixas do sensor de distância (Sensor 1)
+# Sensor geral: faixas anteriores de queda no tanque.
 LIMITE_MIN_QUEDA_METALICA = 220
 LIMITE_MAX_QUEDA_METALICA = 250
-
 LIMITE_MIN_QUEDA_NAO_METALICA = 90
 LIMITE_MAX_QUEDA_NAO_METALICA = 110
 
-CAPACIDADE_TANQUE = 2
+CAPACIDADE_TANQUE = 5
+FATOR_DISTANCIA_CM = 0.1
+
+DURACAO_MONITORAMENTO = 20
 TIMEOUT_REQUISICAO = 3
 
+INTERVALO_LEITURA = 0.05
+INTERVALO_EXIBICAO = 1.0
+INTERVALO_ENVIO_DISTANCIA = 1.0
 
-def ler_env_do_projeto(nome):
-  """Lê uma variável do arquivo .env da raiz do projeto."""
-  caminho = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "..", ".env"
-  )
-  try:
-    with open(caminho, encoding="utf-8") as arquivo:
-      for linha in arquivo:
-        chave, _, valor = linha.strip().partition("=")
-        if chave == nome:
-          return valor.strip()
-  except OSError:
-    pass
-  return ""
+# Repete a contagem metálica enquanto o indutivo estiver na faixa.
+INTERVALO_CONTAGEM_METALICA = 1.0
 
-
-API_URL = os.environ.get("API_URL", "http://localhost:8080/records")
-API_KEY = os.environ.get("API_KEY") or ler_env_do_projeto("API_KEY")
+API_URL = os.environ.get(
+    "API_URL",
+    "http://localhost:8080/records",
+)
 ENVIAR_PARA_API = True
-FATOR_DISTANCIA_CM = 0.1
-DURACAO_MONITORAMENTO = 20
-
-INTERVALO_LEITURA_PECAS = 0.05  # 50 ms
 
 sessao = requests.Session()
 
-pecas_metalicas_no_tanque = 0
-pecas_nao_metalicas_no_tanque = 0
-queda_atual = None
-
-# Configuração do arquivo CSV unificado
-NOME_ARQUIVO_CSV = (
-    f"dados_sensores_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-)
 CABECALHO_CSV = [
     "timestamp",
     "sensor_1_distancia_dec",
     "sensor_1_distancia_hex",
     "sensor_1_cm",
-    "sensor_2_capacitivo_dec",
-    "sensor_2_capacitivo_hex",
+    "sensor_2_indutivo_dec",
+    "sensor_2_indutivo_hex",
+    "sensor_2_presenca_metalica",
+    "sensor_3_capacitivo_dec",
+    "sensor_3_capacitivo_hex",
+    "sensor_3_presenca_nao_metalica",
     "evento",
     "classificacao",
+    "novas_metalicas",
+    "novas_nao_metalicas",
     "total_pecas_geral",
+    "total_pecas_metalicas",
+    "total_pecas_nao_metalicas",
     "pecas_no_tanque",
 ]
 
 
-def registrar_csv(
-    writer,
-    arquivo_csv,
-    s1_dec,
-    s1_hex,
-    s1_cm,
-    s2_dec,
-    s2_hex,
-    evento,
-    classificacao="",
-    tot_geral="",
-    tot_tanque="",
-):
-  """Escreve uma linha consolidando ambos os sensores no CSV."""
-  agora_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-  writer.writerow([
-      agora_str,
-      s1_dec,
-      s1_hex,
-      s1_cm,
-      s2_dec,
-      s2_hex,
-      evento,
-      classificacao,
-      tot_geral,
-      tot_tanque,
-  ])
-  arquivo_csv.flush()
+def ler_sensor(url):
+    """Retorna (decimal, hexadecimal) ou (None, None)."""
+    try:
+        resposta = sessao.get(url, timeout=TIMEOUT_REQUISICAO)
+        resposta.raise_for_status()
+        dados = resposta.json()
+
+        if not isinstance(dados, dict) or dados.get("code") != 200:
+            return None, None
+
+        hexadecimal = dados["data"]["value"]
+        return int(hexadecimal, 16), hexadecimal
+
+    except (
+        requests.exceptions.RequestException,
+        ValueError,
+        KeyError,
+        TypeError,
+    ):
+        return None, None
 
 
-def consultar_sensor_iolink(url):
-  """Faz a requisição HTTP real para a API do IO-Link."""
-  try:
-    resposta = sessao.get(url, timeout=TIMEOUT_REQUISICAO)
-    if resposta.status_code == 200:
-      return resposta.json()
-    else:
-      return None
-  except requests.exceptions.RequestException:
-    return None
-
-
-def ler_valor(config):
-  """Lê um sensor e devolve (valor decimal, hex) ou (None, None) se falhar."""
-  dados = consultar_sensor_iolink(config["url"])
-  if not dados or dados.get("code") != 200:
-    return None, None
-  try:
-    hex_value = dados["data"]["value"]
-    return int(hex_value, 16), hex_value
-  except (ValueError, KeyError):
-    return None, None
-
-
-def classificar_peca(valor):
-  if LIMITE_MIN_METALICA <= valor <= LIMITE_MAX_METALICA:
-    return "metalica"
-  if LIMITE_MIN_NAO_METALICA <= valor <= LIMITE_MAX_NAO_METALICA:
-    return "nao_metalica"
-  return None
+def dentro_da_faixa(valor, minimo, maximo):
+    if valor is None:
+        return None
+    return minimo <= valor <= maximo
 
 
 def classificar_queda(valor):
-  if LIMITE_MIN_QUEDA_METALICA <= valor <= LIMITE_MAX_QUEDA_METALICA:
-    return "metalica"
-  if LIMITE_MIN_QUEDA_NAO_METALICA <= valor <= LIMITE_MAX_QUEDA_NAO_METALICA:
-    return "nao_metalica"
-  return None
+    if valor is None:
+        return None
+
+    if LIMITE_MIN_QUEDA_METALICA <= valor <= LIMITE_MAX_QUEDA_METALICA:
+        return "metalica"
+
+    if (
+        LIMITE_MIN_QUEDA_NAO_METALICA
+        <= valor
+        <= LIMITE_MAX_QUEDA_NAO_METALICA
+    ):
+        return "nao_metalica"
+
+    return None
 
 
-def enviar_peca_api(tipo_peca, distancia_cm, tempo_decorrido, total_tanque):
-  """Grava a peça na API (POST /records)."""
-  if not ENVIAR_PARA_API:
-    return
-  total_pecas = total_pecas_metalicas + total_pecas_nao_metalicas
-  taxa_por_minuto = total_pecas * 60 / tempo_decorrido if tempo_decorrido > 0 else 0
-  peca = {
-      "metalPieces": int(tipo_peca == "metalica"),
-      "nonMetalPieces": int(tipo_peca == "nao_metalica"),
-      "situation": "cheio" if total_tanque >= CAPACIDADE_TANQUE else "ok",
-      "productionRate": round(taxa_por_minuto, 2),
-      "distance": distancia_cm,
-  }
-  cabecalhos = {"X-API-Key": API_KEY} if API_KEY else {}
-  try:
-    resposta = sessao.post(
-        API_URL, json=peca, headers=cabecalhos, timeout=TIMEOUT_REQUISICAO
+def enviar_api(
+    novas_metalicas,
+    novas_nao_metalicas,
+    distancia_cm,
+    tempo_decorrido,
+    total_metalicas,
+    total_nao_metalicas,
+    total_tanque,
+):
+    """Envia somente os incrementos de peças deste ciclo."""
+    if not ENVIAR_PARA_API:
+        return
+
+    total = total_metalicas + total_nao_metalicas
+    taxa = (
+        total * 60 / tempo_decorrido
+        if tempo_decorrido > 0
+        else 0
     )
-    resposta.raise_for_status()
-  except requests.exceptions.RequestException as erro:
-    print(f"Falha ao gravar peça na API: {erro}", flush=True)
+
+    payload = {
+        "metalPieces": novas_metalicas,
+        "nonMetalPieces": novas_nao_metalicas,
+        "situation": (
+            "cheio"
+            if total_tanque >= CAPACIDADE_TANQUE
+            else "ok"
+        ),
+        "productionRate": round(taxa, 2),
+        "distance": distancia_cm,
+    }
+
+    try:
+        resposta = sessao.post(
+            API_URL,
+            json=payload,
+            timeout=TIMEOUT_REQUISICAO,
+        )
+
+        if not resposta.ok:
+            print(
+                f"[API] Erro HTTP {resposta.status_code}: "
+                f"{resposta.text[:300]}",
+                flush=True,
+            )
+            return
+
+        if novas_metalicas or novas_nao_metalicas:
+            print(
+                "[API] Enviado: "
+                f"{novas_metalicas} metálica(s), "
+                f"{novas_nao_metalicas} não metálica(s)",
+                flush=True,
+            )
+
+    except requests.exceptions.RequestException as erro:
+        print(f"[API] Falha no envio: {erro}", flush=True)
 
 
-def exibir_estatisticas_finais(tempo_total_decorrido):
-  print("\n" + "=" * 60)
-  print(" MONITORAMENTO ENCERRADO - ESTATÍSTICAS FINAIS")
-  print("=" * 60)
+def exibir_sensores(
+    leituras,
+    distancia_cm,
+    presenca_metalica,
+    presenca_nao_metalica,
+    total_metalicas,
+    total_nao_metalicas,
+    total_tanque,
+):
+    print(
+        f"\n[{datetime.now().strftime('%H:%M:%S')}] "
+        "LEITURA DOS SENSORES",
+        flush=True,
+    )
 
-  print("\n [SENSOR 1 - TANQUE]")
-  if len(historico_distancias_tanque) > 0:
-    media = round(statistics.mean(historico_distancias_tanque))
-    print(f" - Média de nível: {media} cm")
-  pecas_tanque = pecas_metalicas_no_tanque + pecas_nao_metalicas_no_tanque
-  print(f" - Peças no tanque: {pecas_tanque}/{CAPACIDADE_TANQUE}")
+    geral_dec, geral_hex = leituras["geral"]
+    indutivo_dec, indutivo_hex = leituras["indutivo"]
+    capacitivo_dec, capacitivo_hex = leituras["capacitivo"]
 
-  total_geral = total_pecas_metalicas + total_pecas_nao_metalicas
-  print(f"\n [PEÇAS CONTADAS - SENSOR 2]")
-  print(f" - Total geral: {total_geral}")
-  print(f"   • Metálicas: {total_pecas_metalicas}")
-  print(f"   • Não Metálicas: {total_pecas_nao_metalicas}")
+    if geral_dec is None:
+        print("  Geral: indisponível")
+    else:
+        print(
+            f"  Geral: decimal={geral_dec} | "
+            f"hex={geral_hex} | distância={distancia_cm:.1f} cm"
+        )
 
-  print(f"\n Arquivo CSV gerado: {os.path.abspath(NOME_ARQUIVO_CSV)}")
-  print("=" * 60)
+    if indutivo_dec is None:
+        print("  Indutivo: indisponível")
+    else:
+        estado = (
+            "METÁLICA PRESENTE"
+            if presenca_metalica
+            else "fora da faixa"
+        )
+        print(
+            f"  Indutivo: decimal={indutivo_dec} | "
+            f"hex={indutivo_hex} | {estado}"
+        )
+
+    if capacitivo_dec is None:
+        print("  Capacitivo: indisponível")
+    else:
+        estado = (
+            "NÃO METÁLICA PRESENTE"
+            if presenca_nao_metalica
+            else "fora da faixa"
+        )
+        print(
+            f"  Capacitivo: decimal={capacitivo_dec} | "
+            f"hex={capacitivo_hex} | {estado}"
+        )
+
+    print(
+        f"  Total: {total_metalicas + total_nao_metalicas} | "
+        f"metálicas={total_metalicas} | "
+        f"não metálicas={total_nao_metalicas}"
+    )
+    print(
+        f"  Peças no tanque: {total_tanque}/{CAPACIDADE_TANQUE}",
+        flush=True,
+    )
+
+
+def exibir_estatisticas(
+    historicos,
+    tempo_decorrido,
+    total_metalicas,
+    total_nao_metalicas,
+    total_tanque,
+    caminho_csv,
+):
+    print("\n" + "=" * 60)
+    print("MONITORAMENTO ENCERRADO")
+    print("=" * 60)
+    print(f"Tempo: {tempo_decorrido:.1f} segundos")
+
+    for chave, nome, unidade in [
+        ("distancia_cm", "SENSOR GERAL", " cm"),
+        ("indutivo", "SENSOR INDUTIVO", ""),
+        ("capacitivo", "SENSOR CAPACITIVO", ""),
+    ]:
+        valores = historicos[chave]
+        print(f"\n{nome}")
+
+        if not valores:
+            print("Nenhuma leitura válida.")
+            continue
+
+        print(f"Leituras: {len(valores)}")
+        print(f"Último: {valores[-1]}{unidade}")
+        print(f"Média: {statistics.mean(valores):.1f}{unidade}")
+        print(f"Mínimo: {min(valores)}{unidade}")
+        print(f"Máximo: {max(valores)}{unidade}")
+
+    print("\nCONTAGEM")
+    print(f"Total geral: {total_metalicas + total_nao_metalicas}")
+    print(f"Metálicas — indutivo: {total_metalicas}")
+    print(f"Não metálicas — capacitivo: {total_nao_metalicas}")
+    print(f"Peças no tanque: {total_tanque}/{CAPACIDADE_TANQUE}")
+    print(f"\nCSV: {caminho_csv}")
+    print("=" * 60)
 
 
 def monitorar_producao():
-  global total_pecas_metalicas, total_pecas_nao_metalicas
-  global pecas_metalicas_no_tanque, pecas_nao_metalicas_no_tanque
-  global queda_atual
+    total_metalicas = 0
+    total_nao_metalicas = 0
 
-  print(
-      "Iniciando monitoramento unificado de ambos os sensores por"
-      f" {DURACAO_MONITORAMENTO} segundos..."
-  )
-  print(f"Salvando dados em: {NOME_ARQUIVO_CSV}\n")
+    metalicas_no_tanque = 0
+    nao_metalicas_no_tanque = 0
 
-  with open(
-      NOME_ARQUIVO_CSV, mode="w", newline="", encoding="utf-8-sig"
-  ) as arquivo_csv:
-    writer_csv = csv.writer(arquivo_csv, delimiter=";")
-    writer_csv.writerow(CABECALHO_CSV)
+    indutivo_ativo = False
+    capacitivo_ativo = False
+    queda_anterior = None
 
-    tempo_inicio = time.time()
-    peca_presente = False
-    maior_valor_peca = 0
-    maior_hex_peca = ""
+    ultima_contagem_metalica = float("-inf")
 
-    while time.time() - tempo_inicio < DURACAO_MONITORAMENTO:
-      # 1. Leitura dos DOIS sensores no mesmo ciclo
-      val_s1, hex_s1 = ler_valor(SENSORES["sensor_geral"])
-      val_s2, hex_s2 = ler_valor(SENSORES["sensor_metalico"])
+    historicos = {
+        "distancia_cm": [],
+        "indutivo": [],
+        "capacitivo": [],
+    }
 
-      if val_s1 is None or val_s2 is None:
-        time.sleep(INTERVALO_LEITURA_PECAS)
-        continue
+    nome_csv = (
+        f"dados_sensores_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    )
+    caminho_csv = os.path.abspath(nome_csv)
 
-      dist_cm_s1 = round(val_s1 * FATOR_DISTANCIA_CM, 1)
-      historico_distancias_tanque.append(val_s1)
+    print(f"Monitoramento por {DURACAO_MONITORAMENTO} segundos")
+    print(f"API: {API_URL}")
+    print(
+        "Indutivo — metálicas: "
+        f"{LIMITE_MIN_METALICA} a {LIMITE_MAX_METALICA}"
+    )
+    print(
+        "Recontagem metálica enquanto acionado: "
+        f"a cada {INTERVALO_CONTAGEM_METALICA} segundo(s)"
+    )
+    print(
+        "Capacitivo — não metálicas: "
+        f"{LIMITE_MIN_NAO_METALICA} a {LIMITE_MAX_NAO_METALICA}"
+    )
+    print(f"CSV: {caminho_csv}")
+    print("Pressione Ctrl+C para encerrar.\n")
 
-      evento_atual = "leitura_normal"
-      classificacao_atual = ""
+    with open(
+        caminho_csv,
+        mode="w",
+        newline="",
+        encoding="utf-8-sig",
+    ) as arquivo_csv:
+        writer = csv.writer(arquivo_csv, delimiter=";")
+        writer.writerow(CABECALHO_CSV)
 
-      # 2. Processamento do Sensor 1 (Tanque / Queda)
-      tipo_queda = classificar_queda(val_s1)
-      if tipo_queda is not None and tipo_queda != queda_atual:
-        if tipo_queda == "metalica":
-          pecas_metalicas_no_tanque += 1
-        else:
-          pecas_nao_metalicas_no_tanque += 1
-        evento_atual = "queda_tanque"
-        classificacao_atual = tipo_queda
-        print(f"[SENSOR 1] Queda de peça {tipo_queda} detectada (Valor: {val_s1})")
-      queda_atual = tipo_queda
+        inicio = time.monotonic()
+        ultima_exibicao = inicio - INTERVALO_EXIBICAO
+        ultimo_envio_distancia = inicio - INTERVALO_ENVIO_DISTANCIA
 
-      # 3. Processamento do Sensor 2 (Peças / Capacitivo)
-      tem_peca = val_s2 >= LIMITE_MIN_NAO_METALICA
-      if tem_peca:
-        peca_presente = True
-        if val_s2 > maior_valor_peca:
-          maior_valor_peca = val_s2
-          maior_hex_peca = hex_s2
-      elif peca_presente:
-        tipo_peca = classificar_peca(maior_valor_peca)
-        if tipo_peca == "metalica":
-          total_pecas_metalicas += 1
-          evento_atual = "peca_detectada"
-          classificacao_atual = "metalica"
-        elif tipo_peca == "nao_metalica":
-          total_pecas_nao_metalicas += 1
-          evento_atual = "peca_detectada"
-          classificacao_atual = "nao_metalica"
-        else:
-          evento_atual = "peca_ignorada"
-          classificacao_atual = "fora_faixa"
+        try:
+            while time.monotonic() - inicio < DURACAO_MONITORAMENTO:
+                leituras = {
+                    nome: ler_sensor(url)
+                    for nome, url in SENSORES.items()
+                }
 
-        print(
-            f"[SENSOR 2] Peça classificada: {classificacao_atual} (Pico:"
-            f" {maior_valor_peca})"
-        )
-        if tipo_peca:
-          enviar_peca_api(
-              tipo_peca, dist_cm_s1, time.time() - tempo_inicio,
-              pecas_metalicas_no_tanque + pecas_nao_metalicas_no_tanque,
-          )
+                timestamp = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S.%f"
+                )[:-3]
 
-        peca_presente = False
-        maior_valor_peca = 0
-        maior_hex_peca = ""
+                geral_dec, geral_hex = leituras["geral"]
+                indutivo_dec, indutivo_hex = leituras["indutivo"]
+                capacitivo_dec, capacitivo_hex = leituras["capacitivo"]
 
-      # 4. Grava a linha consolidando ambos os sensores no CSV
-      total_geral = total_pecas_metalicas + total_pecas_nao_metalicas
-      total_tanque = pecas_metalicas_no_tanque + pecas_nao_metalicas_no_tanque
-      registrar_csv(
-          writer_csv,
-          arquivo_csv,
-          s1_dec=val_s1,
-          s1_hex=hex_s1,
-          s1_cm=dist_cm_s1,
-          s2_dec=val_s2,
-          s2_hex=hex_s2,
-          evento=evento_atual,
-          classificacao=classificacao_atual,
-          tot_geral=total_geral,
-          tot_tanque=total_tanque,
-      )
+                distancia_cm = None
+                eventos = []
+                classificacoes = []
 
-      time.sleep(INTERVALO_LEITURA_PECAS)
+                novas_metalicas = 0
+                novas_nao_metalicas = 0
 
-    tempo_total_real = time.time() - tempo_inicio
-    exibir_estatisticas_finais(tempo_total_real)
+                # 1. Sensor geral: distância e queda no tanque.
+                if geral_dec is not None:
+                    distancia_cm = round(
+                        geral_dec * FATOR_DISTANCIA_CM,
+                        1,
+                    )
+                    historicos["distancia_cm"].append(distancia_cm)
+
+                    tipo_queda = classificar_queda(geral_dec)
+
+                    if (
+                        tipo_queda is not None
+                        and tipo_queda != queda_anterior
+                    ):
+                        if tipo_queda == "metalica":
+                            metalicas_no_tanque += 1
+                        else:
+                            nao_metalicas_no_tanque += 1
+
+                        eventos.append("queda_tanque")
+                        classificacoes.append(tipo_queda)
+
+                        print(
+                            f"[GERAL] Queda: {tipo_queda} "
+                            f"| valor={geral_dec}",
+                            flush=True,
+                        )
+
+                    queda_anterior = tipo_queda
+                else:
+                    eventos.append("falha_sensor_geral")
+
+                # 2. Indutivo:
+                # conta na entrada e repete a cada segundo ativo.
+                presenca_metalica = dentro_da_faixa(
+                    indutivo_dec,
+                    LIMITE_MIN_METALICA,
+                    LIMITE_MAX_METALICA,
+                )
+
+                if presenca_metalica is not None:
+                    historicos["indutivo"].append(indutivo_dec)
+                    agora_contagem = time.monotonic()
+
+                    if presenca_metalica and (
+                        not indutivo_ativo
+                        or agora_contagem - ultima_contagem_metalica
+                        >= INTERVALO_CONTAGEM_METALICA
+                    ):
+                        novas_metalicas = 1
+                        total_metalicas += 1
+                        ultima_contagem_metalica = agora_contagem
+
+                        eventos.append("peca_metalica_indutivo")
+                        classificacoes.append("metalica")
+
+                        print(
+                            "[INDUTIVO] METÁLICA contada! "
+                            f"Valor={indutivo_dec} | "
+                            f"Total metálicas={total_metalicas}",
+                            flush=True,
+                        )
+
+                    indutivo_ativo = presenca_metalica
+                else:
+                    # Não conta nem muda o estado durante uma falha.
+                    eventos.append("falha_sensor_indutivo")
+
+                # 3. Capacitivo:
+                # conta uma vez ao entrar na faixa.
+                presenca_nao_metalica = dentro_da_faixa(
+                    capacitivo_dec,
+                    LIMITE_MIN_NAO_METALICA,
+                    LIMITE_MAX_NAO_METALICA,
+                )
+
+                if presenca_nao_metalica is not None:
+                    historicos["capacitivo"].append(capacitivo_dec)
+
+                    if presenca_nao_metalica and not capacitivo_ativo:
+                        novas_nao_metalicas = 1
+                        total_nao_metalicas += 1
+
+                        eventos.append("peca_nao_metalica_capacitivo")
+                        classificacoes.append("nao_metalica")
+
+                        print(
+                            "[CAPACITIVO] NÃO METÁLICA detectada! "
+                            f"Valor={capacitivo_dec} | "
+                            f"Total não metálicas={total_nao_metalicas}",
+                            flush=True,
+                        )
+
+                    capacitivo_ativo = presenca_nao_metalica
+                else:
+                    eventos.append("falha_sensor_capacitivo")
+
+                total_geral = total_metalicas + total_nao_metalicas
+                total_tanque = (
+                    metalicas_no_tanque + nao_metalicas_no_tanque
+                )
+
+                # 4. Salva as leituras e contagens no CSV.
+                writer.writerow([
+                    timestamp,
+                    geral_dec,
+                    geral_hex,
+                    distancia_cm,
+                    indutivo_dec,
+                    indutivo_hex,
+                    (
+                        int(presenca_metalica)
+                        if presenca_metalica is not None
+                        else ""
+                    ),
+                    capacitivo_dec,
+                    capacitivo_hex,
+                    (
+                        int(presenca_nao_metalica)
+                        if presenca_nao_metalica is not None
+                        else ""
+                    ),
+                    "|".join(eventos) if eventos else "leitura_normal",
+                    "|".join(classificacoes),
+                    novas_metalicas,
+                    novas_nao_metalicas,
+                    total_geral,
+                    total_metalicas,
+                    total_nao_metalicas,
+                    total_tanque,
+                ])
+                arquivo_csv.flush()
+
+                # 5. Exibição periódica.
+                agora = time.monotonic()
+
+                if agora - ultima_exibicao >= INTERVALO_EXIBICAO:
+                    exibir_sensores(
+                        leituras,
+                        distancia_cm,
+                        presenca_metalica,
+                        presenca_nao_metalica,
+                        total_metalicas,
+                        total_nao_metalicas,
+                        total_tanque,
+                    )
+                    ultima_exibicao = time.monotonic()
+
+                # 6. Envio à API:
+                # incrementos de peças ou atualização de distância.
+                agora = time.monotonic()
+
+                ha_novas_pecas = (
+                    novas_metalicas > 0 or novas_nao_metalicas > 0
+                )
+                enviar_distancia = (
+                    distancia_cm is not None
+                    and agora - ultimo_envio_distancia
+                    >= INTERVALO_ENVIO_DISTANCIA
+                )
+
+                if ha_novas_pecas or enviar_distancia:
+                    enviar_api(
+                        novas_metalicas=novas_metalicas,
+                        novas_nao_metalicas=novas_nao_metalicas,
+                        distancia_cm=distancia_cm,
+                        tempo_decorrido=agora - inicio,
+                        total_metalicas=total_metalicas,
+                        total_nao_metalicas=total_nao_metalicas,
+                        total_tanque=total_tanque,
+                    )
+
+                    if distancia_cm is not None:
+                        ultimo_envio_distancia = time.monotonic()
+
+                time.sleep(INTERVALO_LEITURA)
+
+        except KeyboardInterrupt:
+            print("\nMonitoramento interrompido pelo usuário.")
+
+        finally:
+            exibir_estatisticas(
+                historicos=historicos,
+                tempo_decorrido=time.monotonic() - inicio,
+                total_metalicas=total_metalicas,
+                total_nao_metalicas=total_nao_metalicas,
+                total_tanque=(
+                    metalicas_no_tanque + nao_metalicas_no_tanque
+                ),
+                caminho_csv=caminho_csv,
+            )
 
 
 if __name__ == "__main__":
-  monitorar_producao()
+    try:
+        monitorar_producao()
+    finally:
+        sessao.close()

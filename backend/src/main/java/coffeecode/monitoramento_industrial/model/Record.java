@@ -7,8 +7,8 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Setter
 @Getter
+@Setter
 @Entity
 @Table(name = "records")
 public class Record implements Serializable {
@@ -36,31 +36,21 @@ public class Record implements Serializable {
 
     private Double distance;
 
-    // Columns retained for records written by the previous API.
-    private Boolean isMetal;
-    private String tank;
+    public Record() {
+    }
 
-    public Record(String situation, double productionRate, int metalPieces, int nonMetalPieces, Double distance) {
+    public Record(
+            String situation,
+            double productionRate,
+            int metalPieces,
+            int nonMetalPieces,
+            Double distance
+    ) {
         this.dateTime = LocalDateTime.now();
         this.situation = situation;
         this.productionRate = productionRate;
         this.metalPieces = metalPieces;
         this.nonMetalPieces = nonMetalPieces;
         this.distance = distance;
-    }
-
-    public Record() {
-    }
-
-    @Override
-    public String toString() {
-        return "Record{" +
-                "id=" + id +
-                ", dateTime=" + dateTime +
-                ", situation='" + situation + '\'' +
-                ", productionRate=" + productionRate +
-                ", metalPieces=" + metalPieces +
-                ", nonMetalPieces=" + nonMetalPieces +
-                '}';
     }
 }

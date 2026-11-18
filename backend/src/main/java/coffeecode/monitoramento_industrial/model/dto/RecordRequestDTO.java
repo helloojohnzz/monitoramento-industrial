@@ -5,8 +5,6 @@ public record RecordRequestDTO(
         Double productionRate,
         Integer metalPieces,
         Integer nonMetalPieces,
-        Double distance,
-        Boolean isMetal,
-        String tank
+        Double distance
 ) {
 }

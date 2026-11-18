@@ -133,3 +133,11 @@ Se a API não responder, o app entra em modo demonstração com dados de exemplo
 - João Paulo Oliveira
 - Eduardo Bruno Coppi
 - Beatriz Cardoso Rocha
+
+## Documentação técnica
+
+O relatório segue o modelo disponibilizado no Classroom da Atividade Interdisciplinar e documenta as seis unidades curriculares, a API, a arquitetura, a análise dos CSVs e o estado da integração.
+
+- [Ler o relatório no GitHub](docs/RELATORIO_TECNICO.md)
+- [Baixar o relatório editável em Word](docs/Relatorio_Tecnico_MetalTech.docx)
+
