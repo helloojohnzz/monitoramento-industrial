@@ -79,9 +79,10 @@ function atualizarCena(leituras) {
 async function atualizar() {
     const { leituras, demo } = await buscarLeituras();
     atualizarCena(leituras);
-    status.textContent = demo
+    const conexao = demo
         ? 'Modo demonstração (API não encontrada em ' + API_URL + ')'
         : 'Conectado à API: ' + API_URL;
+    status.textContent = 'Aponte para a frente da fonte · ' + conexao;
 }
 
 // Mostra se o marcador está sendo reconhecido
